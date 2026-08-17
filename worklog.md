@@ -1,33 +1,26 @@
+# Worklog - Louve Movement ERP/PDV
+
 ---
 Task ID: 1
-Agent: Super Z (main)
-Task: Build Louve Movement ERP/PDV system as Next.js app
+Agent: Main Agent
+Task: Corrigir bugs pendentes do sistema Louve Movement
 
 Work Log:
-- Read and analyzed the full APP LOUVE MOVEMENT.md specification (1600+ lines)
-- Identified all 6 modules: Dashboard, Products, Stock, Romaneio/Sales, Financial, Settings
-- Initialized fullstack Next.js 16 project with shadcn/ui, recharts, zustand
-- Copied user logo to /public/logo.jpeg
-- Created types (Product, SaleRecord, CartItem, AppSettings, TabId)
-- Created Zustand store with localStorage persistence and seed data
-- Built LoginScreen component with brand logo and authentication
-- Built DashboardTab with 4 KPI cards + 2 Recharts (bar + doughnut)
-- Built ProductsTab with full CRUD table, search, and ProductModal
-- Built StockTab with inventory table, low stock alerts, restock modal
-- Built RomaneioModal with client data, product selection, cart, and finalize
-- Built RomaneioTab with sales history, PDF export, WhatsApp integration
-- Built FinanceTab with KPIs, line chart, pie chart, and DRE table
-- Built SettingsTab with logo upload, brand config, PIX key, data backup/restore
-- Created main page.tsx with sidebar navigation, mobile menu, and tab routing
-- Fixed lint errors (ref during render, setState in effect)
-- Tested with agent-browser: login, dashboard, product modal, romaneio flow, finance charts, settings
-- Verified stock deduction (G:12→11), sale recording (ROM-906808), financial KPIs
+- Analisei todos os arquivos do sistema para identificar bugs
+- Identifiquei que login, forgot password, quantidade no romaneio e logo na sidebar ja estavam corrigidos
+- Corrigi bug de isolamento de imagem no ProductModal: o populateForm() nao era chamado quando o dialog abria via estado programatico (Radix Dialog nao dispara onOpenChange quando open muda via prop). Solucao: adicionei useEffect que observa productModalOpen e editingProductId para popular o form corretamente. Também adicionei renderizacao condicional da preview de imagem.
+- Corrigi StockTab: adicionada verificacao condicional para imagem nula (evita img com src vazio)
+- Corrigi WhatsApp: mudado de enviar mensagem pre-preenchida para cliente especifico para apenas abrir o app (window.open('https://wa.me/'))
+- Melhorei exportacao PDF em todos os modulos:
+  - Adicionei funcao waitForImages que espera todas as imagens carregarem antes de capturar com html2canvas
+  - Adicionei delay de 300ms apos carregamento para garantir renderizacao completa
+  - Corrigi logica de multi-pagina PDF usando canvas slicing (cria sub-canvases por pagina em vez de offset negativo)
+  - Adicionei crossorigin="anonymous" em todas as tags img nos PDFs
+  - Refatorei RomaneioTab para usar helper functions compartilhados (renderHtmlToPDF, canvasToPDF, waitForImages)
+- Reescrevi DashboardTab.tsx e FinanceTab.tsx para evitar possiveis problemas de parsing com template literals no Turbopack
+- Build passou com sucesso, servidor iniciou e responde HTTP 200
 
 Stage Summary:
-- Fully functional Louve Movement ERP/PDV running on Next.js 16
-- 6 tabs: Dashboard, Products, Stock, Romaneio, Finance, Settings
-- All data persisted in localStorage with JSON backup/restore
-- PDF export for catalog, inventory, DRE, and individual romaneios
-- WhatsApp integration for sending sale receipts
-- Responsive design with mobile sidebar menu
-- Amber/gold brand colors from logo
+- 5 correcoes aplicadas: image isolation, null image, WhatsApp, PDF exports, build fixes
+- Todos os arquivos compilam sem erros
+- Servidor Next.js rodando em localhost:3000

@@ -8,40 +8,101 @@ function getLogo(settings: AppSettings): string {
 }
 
 function imgToHtml(src: string, w: number, h: number, radius = 8): string {
-  if (!src) return `<div style="width:${w}px;height:${h}px;border-radius:${radius}px;background:#e2e8f0;display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:${Math.floor(w/3)}px;">SEM</div>`;
-  return `<img src="${src}" style="width:${w}px;height:${h}px;border-radius:${radius}px;object-fit:cover;" />`;
+  if (!src) return `<div style="width:${w}px;height:${h}px;border-radius:${radius}px;background:#e2e8f0;display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:${Math.floor(w / 3)}px;">SEM</div>`;
+  return `<img src="${src}" style="width:${w}px;height:${h}px;border-radius:${radius}px;object-fit:cover;" crossorigin="anonymous" />`;
+}
+
+/** Wait for all <img> elements inside a container to finish loading (or fail) */
+function waitForImages(container: HTMLDivElement): Promise<void> {
+  const imgs = Array.from(container.querySelectorAll('img'));
+  if (imgs.length === 0) return Promise.resolve();
+  return Promise.all(
+    imgs.map(
+      (img) =>
+        new Promise<void>((resolve) => {
+          if (img.complete) {
+            resolve();
+          } else {
+            img.onload = () => resolve();
+            img.onerror = () => resolve(); // don't block on broken images
+            // Timeout fallback for CORS-blocked images
+            setTimeout(resolve, 3000);
+          }
+        })
+    )
+  ).then(() => {});
 }
 
 function renderAndDownload(html: string, filename: string) {
-  Promise.all([import('jspdf'), import('html2canvas')]).then(([{ jsPDF }, { default: html2canvas }]) => {
-    const container = document.createElement('div');
-    container.style.cssText = 'position:fixed;left:-9999px;top:0;width:700px;padding:24px;background:white;font-family:sans-serif;';
-    container.innerHTML = html;
-    document.body.appendChild(container);
-    html2canvas(container, { scale: 2, useCORS: true, allowTaint: true }).then((canvas) => {
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      const imgWidth = 190;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      if (imgHeight <= 287) {
-        pdf.addImage(imgData, 'PNG', 10, 10, imgWidth, imgHeight);
-      } else {
-        const pageH = 277;
-        let srcY = 0;
-        let dstY = 10;
-        const totalPages = Math.ceil(imgHeight / pageH);
-        for (let p = 0; p < totalPages; p++) {
-          if (p > 0) pdf.addPage();
-          pdf.addImage(imgData, 'PNG', 10, dstY, imgWidth, imgHeight, undefined, 'FAST', p === 0 ? 0 : -(pageH * p + 10 * p));
+  Promise.all([import('jspdf'), import('html2canvas')]).then(
+    ([{ jsPDF }, { default: html2canvas }]) => {
+      const container = document.createElement('div');
+      container.style.cssText =
+        'position:fixed;left:-9999px;top:0;width:700px;padding:24px;background:white;font-family:sans-serif;z-index:-1;';
+      container.innerHTML = html;
+      document.body.appendChild(container);
+
+      // Wait for images to load before capturing
+      waitForImages(container).then(() => {
+        // Small delay to ensure rendering is complete
+        return new Promise<void>((r) => setTimeout(r, 300));
+      }).then(() => {
+        return html2canvas(container, {
+          scale: 2,
+          useCORS: true,
+          allowTaint: true,
+          logging: false,
+        });
+      }).then((canvas) => {
+        const pdf = new jsPDF('p', 'mm', 'a4');
+        const imgWidth = 190;
+        const pageHeight = 277;
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+        if (imgHeight <= pageHeight) {
+          // Single page
+          pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 10, 10, imgWidth, imgHeight);
+        } else {
+          // Multi-page: slice the canvas
+          const totalPages = Math.ceil(imgHeight / pageHeight);
+          for (let i = 0; i < totalPages; i++) {
+            if (i > 0) pdf.addPage();
+            // Source Y in canvas pixels
+            const srcY = (i * pageHeight / imgHeight) * canvas.height;
+            // Source height in canvas pixels
+            const srcH = Math.min(
+              (pageHeight / imgHeight) * canvas.height,
+              canvas.height - srcY
+            );
+            // Create a slice canvas
+            const slice = document.createElement('canvas');
+            slice.width = canvas.width;
+            slice.height = srcH;
+            const ctx = slice.getContext('2d');
+            if (ctx) {
+              ctx.drawImage(canvas, 0, srcY, canvas.width, srcH, 0, 0, canvas.width, srcH);
+            }
+            const sliceImgH = (srcH * imgWidth) / canvas.width;
+            pdf.addImage(slice.toDataURL('image/png'), 'PNG', 10, 10, imgWidth, sliceImgH);
+          }
         }
-      }
-      pdf.save(filename);
-      document.body.removeChild(container);
-    });
-  });
+        pdf.save(filename);
+        document.body.removeChild(container);
+      }).catch((err) => {
+        console.error('PDF export error:', err);
+        document.body.removeChild(container);
+      });
+    }
+  );
 }
 
-export function exportDashboardPDF(settings: AppSettings, kpis: { label: string; value: string; sub: string }[], chartImgSales: string, chartImgSizes: string, recentSales: SaleRecord[]) {
+export function exportDashboardPDF(
+  settings: AppSettings,
+  kpis: { label: string; value: string; sub: string }[],
+  chartImgSales: string,
+  chartImgSizes: string,
+  recentSales: SaleRecord[]
+) {
   const logo = getLogo(settings);
   const html = `
     <div style="font-family:sans-serif;padding:24px;">
@@ -55,7 +116,7 @@ export function exportDashboardPDF(settings: AppSettings, kpis: { label: string;
       </div>
 
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;">
-        ${kpis.map(k => `
+        ${kpis.map((k) => `
           <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px;">
             <div style="font-size:10px;color:#64748b;">${k.label}</div>
             <div style="font-size:22px;font-weight:bold;color:#0f172a;margin:4px 0 0 0;">${k.value}</div>
@@ -109,12 +170,12 @@ export function exportProductsPDF(settings: AppSettings, products: Product[]) {
         </div>
         <div style="margin-left:auto;text-align:right;font-size:10px;color:#94a3b8;">Gerado em: ${new Date().toLocaleDateString('pt-BR')}</div>
       </div>
-      ${products.map((p, idx) => {
+      ${products.map((p) => {
         const total = p.sizes.P + p.sizes.M + p.sizes.G + p.sizes.GG;
         const profit = p.price - p.cost;
         const margin = p.price > 0 ? ((profit / p.price) * 100).toFixed(0) : '0';
         return `
-          <div style="border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;margin-bottom:14px;${idx % 2 === 0 ? '' : 'page-break-inside:avoid;'}">
+          <div style="border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;margin-bottom:14px;">
             <div style="display:flex;gap:14px;padding:14px;background:#f8fafc;">
               <div style="flex-shrink:0;">${imgToHtml(p.image, 72, 72, 10)}</div>
               <div style="flex:1;">
@@ -133,10 +194,10 @@ export function exportProductsPDF(settings: AppSettings, products: Product[]) {
               </div>
             </div>
             <div style="display:flex;justify-content:space-around;padding:10px;background:white;">
-              ${(['P','M','G','GG'] as const).map(s => `
+              ${(['P', 'M', 'G', 'GG'] as const).map((s) => `
                 <div style="text-align:center;">
                   <div style="font-weight:bold;font-size:12px;color:#334155;">${s}</div>
-                  <div style="font-size:18px;font-weight:bold;color:${p.sizes[s] <= (p.minStock||5) ? '#dc2626' : '#0f172a'};">${p.sizes[s]}</div>
+                  <div style="font-size:18px;font-weight:bold;color:${p.sizes[s] <= (p.minStock || 5) ? '#dc2626' : '#0f172a'};">${p.sizes[s]}</div>
                 </div>
               `).join('<div style="width:1px;background:#e2e8f0;"></div>')}
             </div>
@@ -178,18 +239,20 @@ export function exportStockPDF(settings: AppSettings, products: Product[]) {
             const total = p.sizes.P + p.sizes.M + p.sizes.G + p.sizes.GG;
             const isLow = total <= (p.minStock || 5);
             return `
-              <tr style="background:${idx%2===0?'#fff':'#f8fafc'};">
-                <td style="padding:8px;display:flex;align-items:center;gap:8px;">
-                  ${imgToHtml(p.image, 28, 28, 6)}
-                  <div><div style="font-weight:bold;">${p.name}</div><div style="color:#94a3b8;font-size:9px;">${p.code} | ${p.color}</div></div>
+              <tr style="background:${idx % 2 === 0 ? '#fff' : '#f8fafc'};">
+                <td style="padding:8px;">
+                  <div style="display:flex;align-items:center;gap:8px;">
+                    ${imgToHtml(p.image, 28, 28, 6)}
+                    <div><div style="font-weight:bold;">${p.name}</div><div style="color:#94a3b8;font-size:9px;">${p.code} | ${p.color}</div></div>
+                  </div>
                 </td>
                 <td style="padding:8px;text-align:center;font-weight:bold;">${p.sizes.P}</td>
                 <td style="padding:8px;text-align:center;font-weight:bold;">${p.sizes.M}</td>
                 <td style="padding:8px;text-align:center;font-weight:bold;">${p.sizes.G}</td>
                 <td style="padding:8px;text-align:center;font-weight:bold;">${p.sizes.GG}</td>
-                <td style="padding:8px;text-align:center;font-weight:bold;color:${isLow?'#dc2626':'#0f172a'};">${total}</td>
+                <td style="padding:8px;text-align:center;font-weight:bold;color:${isLow ? '#dc2626' : '#0f172a'};">${total}</td>
                 <td style="padding:8px;text-align:center;">${p.minStock}</td>
-                <td style="padding:8px;text-align:center;"><span style="padding:2px 8px;border-radius:99px;font-size:9px;font-weight:bold;color:white;background:${isLow?'#dc2626':'#10b981'};">${isLow?'BAIXO':'OK'}</span></td>
+                <td style="padding:8px;text-align:center;"><span style="padding:2px 8px;border-radius:99px;font-size:9px;font-weight:bold;color:white;background:${isLow ? '#dc2626' : '#10b981'};">${isLow ? 'BAIXO' : 'OK'}</span></td>
               </tr>
             `;
           }).join('')}
@@ -200,7 +263,19 @@ export function exportStockPDF(settings: AppSettings, products: Product[]) {
   renderAndDownload(html, `Inventario_Estoque_${settings.brandName.replace(/\s+/g, '_')}.pdf`);
 }
 
-export function exportFinancePDF(settings: AppSettings, data: { totalGross: number; totalCost: number; netProfit: number; margin: string; ticketMedio: number; salesCount: number; chartImgMonthly: string; chartImgPayment: string }) {
+export function exportFinancePDF(
+  settings: AppSettings,
+  data: {
+    totalGross: number;
+    totalCost: number;
+    netProfit: number;
+    margin: string;
+    ticketMedio: number;
+    salesCount: number;
+    chartImgMonthly: string;
+    chartImgPayment: string;
+  }
+) {
   const logo = getLogo(settings);
   const html = `
     <div style="font-family:sans-serif;padding:24px;">

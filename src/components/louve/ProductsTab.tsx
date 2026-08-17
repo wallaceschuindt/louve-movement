@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useLouveStore } from '@/store/louve-store';
 import { Plus, FileText, Edit3, Trash2, Search, Upload, Download } from 'lucide-react';
 import type { Product } from '@/types/louve';
@@ -173,40 +173,6 @@ function ProductModal() {
   const isEditing = !!editingProductId;
   const editingProduct = isEditing ? products.find((p) => p.id === editingProductId) : null;
 
-  const populateForm = () => {
-    if (editingProduct) {
-      setForm({
-        name: editingProduct.name,
-        code: editingProduct.code,
-        print: editingProduct.print,
-        color: editingProduct.color,
-        cost: String(editingProduct.cost),
-        price: String(editingProduct.price),
-        minStock: String(editingProduct.minStock),
-        P: String(editingProduct.sizes.P),
-        M: String(editingProduct.sizes.M),
-        G: String(editingProduct.sizes.G),
-        GG: String(editingProduct.sizes.GG),
-        image: editingProduct.image,
-      });
-    } else {
-      setForm({
-        name: '',
-        code: `LM-ST-${String(products.length + 1).padStart(2, '0')}`,
-        print: '',
-        color: '',
-        cost: '',
-        price: '',
-        minStock: '5',
-        P: '0',
-        M: '0',
-        G: '0',
-        GG: '0',
-        image: '',
-      });
-    }
-  };
-
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
     const costNum = parseFloat(form.cost);
@@ -252,11 +218,45 @@ function ProductModal() {
     reader.readAsDataURL(file);
   };
 
-  // Reset form when dialog opens
+  // Populate form when dialog opens (programmatic open doesn't trigger onOpenChange)
+  useEffect(() => {
+    if (productModalOpen) {
+      if (editingProduct) {
+        setForm({
+          name: editingProduct.name,
+          code: editingProduct.code,
+          print: editingProduct.print,
+          color: editingProduct.color,
+          cost: String(editingProduct.cost),
+          price: String(editingProduct.price),
+          minStock: String(editingProduct.minStock),
+          P: String(editingProduct.sizes.P),
+          M: String(editingProduct.sizes.M),
+          G: String(editingProduct.sizes.G),
+          GG: String(editingProduct.sizes.GG),
+          image: editingProduct.image || '',
+        });
+      } else {
+        setForm({
+          name: '',
+          code: `LM-ST-${String(products.length + 1).padStart(2, '0')}`,
+          print: '',
+          color: '',
+          cost: '',
+          price: '',
+          minStock: '5',
+          P: '0',
+          M: '0',
+          G: '0',
+          GG: '0',
+          image: '',
+        });
+      }
+    }
+  }, [productModalOpen, editingProductId]);
+
   const handleOpenChange = (open: boolean) => {
-    if (open) {
-      populateForm();
-    } else {
+    if (!open) {
       closeProductModal();
     }
   };
@@ -273,11 +273,14 @@ function ProductModal() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {/* Image Upload */}
             <div className="sm:col-span-1 flex flex-col items-center justify-center border-2 border-dashed border-slate-200 rounded-2xl p-4 bg-slate-50 text-center">
-              <img src={form.image || ''} alt="Preview" className={`${form.image ? 'w-24 h-24' : 'w-24 h-24 bg-slate-100'} object-cover rounded-xl mb-2 shadow-sm`} />
-              {form.image && (
+              {form.image ? (
+                <img src={form.image} alt="Preview" className="w-24 h-24 object-cover rounded-xl mb-2 shadow-sm" />
+              ) : (
+                <div className="w-24 h-24 bg-slate-100 rounded-xl mb-2 flex items-center justify-center text-slate-400 text-[10px]">SEM FOTO</div>
+              )}
               <label className="cursor-pointer text-[11px] font-bold text-amber-600 hover:underline">
                 <Upload className="w-3 h-3 inline mr-1" />
-                Carregar Foto
+                {form.image ? 'Trocar Foto' : 'Carregar Foto'}
                 <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
               </label>
             </div>

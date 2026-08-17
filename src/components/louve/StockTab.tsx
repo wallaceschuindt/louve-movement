@@ -107,7 +107,11 @@ export function StockTab() {
                     <tr key={p.id} className="hover:bg-slate-50 transition border-b border-slate-100">
                       <td className="p-3.5">
                         <div className="flex items-center gap-3">
-                          <img src={p.image} className="w-10 h-10 object-cover rounded-xl border border-slate-200" alt={p.name} />
+                          {p.image ? (
+                            <img src={p.image} className="w-10 h-10 object-cover rounded-xl border border-slate-200" alt={p.name} />
+                          ) : (
+                            <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400 text-[10px]">SEM FOTO</div>
+                          )}
                           <div>
                             <div className="font-bold text-slate-800">{p.name}</div>
                             <div className="text-[11px] text-slate-400 font-mono">{p.code} &bull; {p.print} ({p.color})</div>

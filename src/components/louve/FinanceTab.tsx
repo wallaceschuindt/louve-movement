@@ -15,7 +15,7 @@ const PAYMENT_COLORS = ['#10b981', '#3b82f6', '#8b5cf6', '#f59e0b'];
 export function FinanceTab() {
   const { sales, settings } = useLouveStore();
   const [mounted, setMounted] = useState(false);
-  const [activePeriod, setActivePeriod] = useState<'all' | 'month'>('all');
+  const [activePeriod, setActivePeriod] = useState('all' as string);
   const monthlyChartRef = useRef<HTMLDivElement>(null);
   const paymentChartRef = useRef<HTMLDivElement>(null);
 
@@ -61,11 +61,13 @@ export function FinanceTab() {
     let chartImgPayment = '';
     try {
       if (monthlyChartRef.current) {
-        const canvas = await import('html2canvas').then(({ default: h2c }) => h2c(monthlyChartRef.current, { backgroundColor: '#ffffff', scale: 2 }));
+        const html2canvas = (await import('html2canvas')).default;
+        const canvas = await html2canvas(monthlyChartRef.current, { backgroundColor: '#ffffff', scale: 2 });
         chartImgMonthly = canvas.toDataURL('image/png');
       }
       if (paymentChartRef.current) {
-        const canvas = await import('html2canvas').then(({ default: h2c }) => h2c(paymentChartRef.current, { backgroundColor: '#ffffff', scale: 2 }));
+        const html2canvas = (await import('html2canvas')).default;
+        const canvas = await html2canvas(paymentChartRef.current, { backgroundColor: '#ffffff', scale: 2 });
         chartImgPayment = canvas.toDataURL('image/png');
       }
     } catch {}
@@ -93,14 +95,27 @@ export function FinanceTab() {
     );
   }
 
+  const isAll = activePeriod === 'all';
+  const isMonth = activePeriod === 'month';
+
   return (
     <section className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
         <div className="flex gap-2">
-          <Button variant={activePeriod === 'all' ? 'default' : 'outline'} size="sm" onClick={() => setActivePeriod('all')} className={`text-xs ${activePeriod === 'all' ? 'bg-amber-500 hover:bg-amber-600 text-slate-950' : ''}`}>
+          <Button
+            variant={isAll ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setActivePeriod('all')}
+            className={"text-xs " + (isAll ? "bg-amber-500 hover:bg-amber-600 text-slate-950" : "")}
+          >
             Geral
           </Button>
-          <Button variant={activePeriod === 'month' ? 'default' : 'outline'} size="sm" onClick={() => setActivePeriod('month')} className={`text-xs ${activePeriod === 'month' ? 'bg-amber-500 hover:bg-amber-600 text-slate-950' : ''}`}>
+          <Button
+            variant={isMonth ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setActivePeriod('month')}
+            className={"text-xs " + (isMonth ? "bg-amber-500 hover:bg-amber-600 text-slate-950" : "")}
+          >
             Mes Atual
           </Button>
         </div>
@@ -133,7 +148,7 @@ export function FinanceTab() {
                 <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                 <XAxis dataKey="month" tick={{ fontSize: 11 }} />
                 <YAxis tick={{ fontSize: 11 }} />
-                <Tooltip formatter={(value: number) => `R$ ${value.toFixed(2)}`} contentStyle={{ borderRadius: 12, border: '1px solid #e2e8f0', fontSize: 12 }} />
+                <Tooltip formatter={(value: number) => 'R$ ' + value.toFixed(2)} contentStyle={{ borderRadius: 12, border: '1px solid #e2e8f0', fontSize: 12 }} />
                 <Line type="monotone" dataKey="Receita" stroke="#d97706" strokeWidth={2} dot={{ r: 4 }} />
                 <Line type="monotone" dataKey="Lucro" stroke="#10b981" strokeWidth={2} dot={{ r: 4 }} />
               </LineChart>
@@ -148,11 +163,11 @@ export function FinanceTab() {
             ) : (
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
-                  <Pie data={payData} cx="50%" cy="50%" innerRadius={50} outerRadius={90} paddingAngle={4} dataKey="value" label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}>
-                    {payData.map((_, index) => (<Cell key={`cell-${index}`} fill={PAYMENT_COLORS[index % PAYMENT_COLORS.length]} />))}
+                  <Pie data={payData} cx="50%" cy="50%" innerRadius={50} outerRadius={90} paddingAngle={4} dataKey="value" label={({ name, percent }) => name + ' ' + (percent * 100).toFixed(0) + '%'}>
+                    {payData.map((_, index) => (<Cell key={"cell-" + index} fill={PAYMENT_COLORS[index % PAYMENT_COLORS.length]} />))}
                   </Pie>
                   <Legend />
-                  <Tooltip formatter={(value: number, name: string) => [`R$ ${value.toFixed(2)}`, name]} contentStyle={{ borderRadius: 12, border: '1px solid #e2e8f0', fontSize: 12 }} />
+                  <Tooltip formatter={(value: number, name: string) => ['R$ ' + value.toFixed(2), name]} contentStyle={{ borderRadius: 12, border: '1px solid #e2e8f0', fontSize: 12 }} />
                 </PieChart>
               </ResponsiveContainer>
             )}
