@@ -22,6 +22,7 @@ interface LouveState {
   editingProductId: string | null;
   editingOtherProductId: string | null;
   password: string;
+  editingSaleId: string | null;
 
   login: (email: string, pass: string) => boolean;
   changePassword: (oldPass: string, newPass: string) => boolean;
@@ -55,6 +56,8 @@ interface LouveState {
   openOtherRomaneioModal: () => void;
   closeOtherRomaneioModal: () => void;
   deleteSale: (id: string) => void;
+  updateSale: (sale: SaleRecord) => void;
+  openRomaneioModalForEdit: (saleId: string) => void;
   deleteOtherSale: (id: string) => void;
   exportData: () => string;
   importData: (json: string) => void;
@@ -72,6 +75,7 @@ const seedProducts: Product[] = [
     id: 'prod_1',
     code: 'LM-ST-01',
     name: 'Camisa Oversized Lion of Judah',
+    category: 'Oversized',
     print: 'Leao de Juda Floral Costas',
     color: 'Preto Mineral',
     cost: 38.0,
@@ -84,6 +88,7 @@ const seedProducts: Product[] = [
     id: 'prod_2',
     code: 'LM-ST-02',
     name: 'Camisa Minimalist Grace',
+    category: 'Slim',
     print: 'Graca Sobre Graca Peito',
     color: 'Off-White / Bege',
     cost: 34.0,
@@ -175,11 +180,13 @@ function saveToStorage(state: {
 
 export const useLouveStore = create<LouveState>((set, get) => {
   const saved = loadFromStorage();
+  const migrateProducts = (prods: Product[]): Product[] =>
+    prods.map((p) => (p.category ? p : { ...p, category: 'Oversized' }));
   const initialState = {
     isLoggedIn: false,
     activeTab: 'dashboard-geral' as TabId,
     settings: saved?.settings || defaultSettings,
-    products: saved?.products || seedProducts,
+    products: migrateProducts(saved?.products || seedProducts),
     sales: saved?.sales || [],
     currentCart: [] as CartItem[],
     otherProducts: saved?.otherProducts || seedOtherProducts,
@@ -191,6 +198,7 @@ export const useLouveStore = create<LouveState>((set, get) => {
     otherRomaneioModalOpen: false,
     editingProductId: null as string | null,
     editingOtherProductId: null as string | null,
+    editingSaleId: null as string | null,
     password: (saved as Record<string, unknown>)?.password as string || '123456',
   };
 
@@ -296,7 +304,7 @@ export const useLouveStore = create<LouveState>((set, get) => {
     closeProductModal: () =>
       set({ productModalOpen: false, editingProductId: null }),
     openRomaneioModal: () => set({ romaneioModalOpen: true, currentCart: [] }),
-    closeRomaneioModal: () => set({ romaneioModalOpen: false, currentCart: [] }),
+    closeRomaneioModal: () => set({ romaneioModalOpen: false, currentCart: [], editingSaleId: null }),
 
     adjustStock: (productId, size, qty) =>
       set((s) => {
@@ -394,6 +402,45 @@ export const useLouveStore = create<LouveState>((set, get) => {
         const sales = s.sales.filter((sale) => sale.id !== id);
         saveToStorage({ ...s, sales });
         return { sales };
+      }),
+
+    updateSale: (updatedSale) =>
+      set((s) => {
+        const oldSale = s.sales.find((sale) => sale.id === updatedSale.id);
+        if (!oldSale) return s;
+        const stockDiff: Record<string, Record<string, number>> = {};
+        oldSale.items.forEach((item) => {
+          if (!stockDiff[item.productId]) stockDiff[item.productId] = {};
+          if (!stockDiff[item.productId][item.size]) stockDiff[item.productId][item.size] = 0;
+          stockDiff[item.productId][item.size] += item.qty;
+        });
+        updatedSale.items.forEach((item) => {
+          if (!stockDiff[item.productId]) stockDiff[item.productId] = {};
+          if (!stockDiff[item.productId][item.size]) stockDiff[item.productId][item.size] = 0;
+          stockDiff[item.productId][item.size] -= item.qty;
+        });
+        const products = s.products.map((p) => {
+          const diff = stockDiff[p.id];
+          if (!diff) return p;
+          const updatedSizes = { ...p.sizes };
+          for (const size of ['P', 'M', 'G', 'GG'] as const) {
+            if (diff[size]) {
+              updatedSizes[size] = Math.max(0, updatedSizes[size] + diff[size]);
+            }
+          }
+          return { ...p, sizes: updatedSizes };
+        });
+        const sales = s.sales.map((sale) => (sale.id === updatedSale.id ? updatedSale : sale));
+        saveToStorage({ ...s, products, sales });
+        return { sales, products, editingSaleId: null, currentCart: [] };
+      }),
+
+    openRomaneioModalForEdit: (saleId) =>
+      set((s) => {
+        const sale = s.sales.find((sale) => sale.id === saleId);
+        if (!sale) return s;
+        const cart: CartItem[] = sale.items.map((item) => ({ ...item }));
+        return { romaneioModalOpen: true, editingSaleId: saleId, currentCart: cart };
       }),
 
     deleteOtherSale: (id) =>

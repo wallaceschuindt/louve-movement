@@ -22,3 +22,25 @@ Stage Summary:
 - CRUD completo em romaneios (ver, criar, editar via modal, excluir, exportar individual e todos)
 - 3 produtos exemplo cadastrados (caneca, chaveiro, caneta)
 - Financeiro GERAL consolida dados de camisas e outros produtos
+---
+Task ID: 1
+Agent: Main Agent
+Task: Corrigir PDF export, adicionar editar romaneio, adicionar categorias customizaveis
+
+Work Log:
+- Leu todos os arquivos-chave (export-pdf.ts, RomaneioCamisas.tsx, RomaneioCamisasModal.tsx, CamisasGrade.tsx, OutrosProdutosTab.tsx, louve-store.ts, types/louve.ts)
+- Corrigiu renderAndDownload() no export-pdf.ts: trocou left:-9999px por opacity:0+pointer-events:none, adicionou windowWidth:700 e backgroundColor, removeu allowTaint:true
+- Melhorou waitForImages() com tratamento de erro que substitui imagens falhadas por placeholder
+- Adicionou updateSale e openRomaneioModalForEdit no store com recalculo automatico de estoque
+- Reescreveu RomaneioCamisasModal para suportar modo editar (preenche dados, ajusta estoque diferencialmente)
+- Adicionou botao Edit3 na listagem de romaneios
+- Adicionou campo category ao tipo Product + migracao automatica para produtos antigos
+- Criou gerenciador de categorias em CamisasGrade (botao Categorias, dialog com criar/remover)
+- Criou gerenciador de categorias em OutrosProdutosTab (mesmo padrao)
+- Categorias salvas em localStorage separado (LOUVE_SHIRT_CATEGORIES e LOUVE_CUSTOM_CATEGORIES)
+- Build aprovado sem erros
+
+Stage Summary:
+- PDF export corrigido em todas as abas (mudanca de posicionamento + remocao allowTaint)
+- Editar romaneio funcional (icone de lapis amarelo na listagem, modal reutilizado com modo edicao)
+- Categorias customizaveis em Camisas e Outros Produtos

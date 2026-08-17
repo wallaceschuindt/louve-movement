@@ -18,12 +18,27 @@ function waitForImages(container: HTMLDivElement): Promise<void> {
     imgs.map(
       (img) =>
         new Promise<void>((resolve) => {
-          if (img.complete) {
+          if (img.complete && img.naturalWidth > 0) {
             resolve();
           } else {
-            img.onload = () => resolve();
-            img.onerror = () => resolve();
-            setTimeout(resolve, 3000);
+            const onDone = () => {
+              img.removeEventListener('load', onDone);
+              img.removeEventListener('error', onError);
+              resolve();
+            };
+            const onError = () => {
+              img.removeEventListener('load', onDone);
+              img.removeEventListener('error', onError);
+              img.style.display = 'none';
+              const ph = document.createElement('div');
+              ph.style.cssText = 'width:100%;height:100%;background:#e2e8f0;display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:10px;';
+              ph.textContent = 'SEM IMAGEM';
+              img.parentNode?.replaceChild(ph, img);
+              resolve();
+            };
+            img.addEventListener('load', onDone);
+            img.addEventListener('error', onError);
+            setTimeout(onError, 4000);
           }
         })
     )
@@ -37,18 +52,19 @@ async function renderAndDownload(html: string, filename: string) {
     const html2canvas = (await import('html2canvas')).default;
 
     container = document.createElement('div');
-    container.style.cssText = 'position:fixed;left:-9999px;top:0;width:700px;padding:24px;background:white;font-family:sans-serif;z-index:-1;';
+    container.style.cssText = 'position:fixed;top:0;left:0;width:700px;padding:24px;background:white;font-family:sans-serif;z-index:-9999;opacity:0;pointer-events:none;overflow:visible;';
     container.innerHTML = html;
     document.body.appendChild(container);
 
     await waitForImages(container);
-    await new Promise<void>((r) => setTimeout(r, 500));
+    await new Promise<void>((r) => setTimeout(r, 800));
 
     const canvas = await html2canvas(container, {
       scale: 2,
       useCORS: true,
-      allowTaint: true,
       logging: false,
+      windowWidth: 700,
+      backgroundColor: '#ffffff',
     });
 
     const pdf = new jsPDF('p', 'mm', 'a4');

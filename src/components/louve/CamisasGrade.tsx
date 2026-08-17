@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useLouveStore } from '@/store/louve-store';
-import { Plus, FileText, Edit3, Trash2, Search, Upload, Download } from 'lucide-react';
+import { Plus, FileText, Edit3, Trash2, Search, Upload, Download, Tag, X } from 'lucide-react';
 import type { Product } from '@/types/louve';
 import { exportProductsPDF } from '@/lib/export-pdf';
 import {
@@ -15,16 +15,68 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
+const DEFAULT_CATEGORIES = ['Oversized', 'Slim', 'Polo', 'Regata', 'Moletom', 'Baby Look', 'Outro'];
+const CAT_STORAGE_KEY = 'LOUVE_SHIRT_CATEGORIES';
+
+function loadCustomCategories(): string[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const saved = localStorage.getItem(CAT_STORAGE_KEY);
+    return saved ? JSON.parse(saved) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveCustomCategories(cats: string[]) {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(CAT_STORAGE_KEY, JSON.stringify(cats));
+  } catch {
+    // storage full
+  }
+}
+
 export function CamisasGrade() {
   const { products, openProductModal, deleteProduct, settings } = useLouveStore();
   const [search, setSearch] = useState('');
+  const [customCategories, setCustomCategories] = useState<string[]>([]);
+  const [showCatManager, setShowCatManager] = useState(false);
+  const [newCatInput, setNewCatInput] = useState('');
+
+  useEffect(() => {
+    setCustomCategories(loadCustomCategories());
+  }, []);
+
+  const allCategories = [...DEFAULT_CATEGORIES.filter((c) => !customCategories.includes(c)), ...customCategories];
+
+  const handleAddCategory = () => {
+    const trimmed = newCatInput.trim();
+    if (!trimmed) return;
+    const upper = trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
+    if (allCategories.some((c) => c.toLowerCase() === upper.toLowerCase())) {
+      alert('Categoria "' + upper + '" ja existe!');
+      return;
+    }
+    const updated = [...customCategories, upper];
+    setCustomCategories(updated);
+    saveCustomCategories(updated);
+    setNewCatInput('');
+  };
+
+  const handleRemoveCategory = (cat: string) => {
+    const updated = customCategories.filter((c) => c !== cat);
+    setCustomCategories(updated);
+    saveCustomCategories(updated);
+  };
 
   const filtered = products.filter(
     (p) =>
       p.name.toLowerCase().includes(search.toLowerCase()) ||
       p.print.toLowerCase().includes(search.toLowerCase()) ||
       p.color.toLowerCase().includes(search.toLowerCase()) ||
-      p.code.toLowerCase().includes(search.toLowerCase())
+      p.code.toLowerCase().includes(search.toLowerCase()) ||
+      (p.category && p.category.toLowerCase().includes(search.toLowerCase()))
   );
 
   const handleExportPDF = async () => {
@@ -44,11 +96,19 @@ export function CamisasGrade() {
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Buscar por nome, estampa, cor ou codigo..."
+            placeholder="Buscar por nome, estampa, cor, categoria ou codigo..."
             className="text-xs bg-white border border-slate-200 rounded-xl pl-9 pr-4 py-2.5 w-72 focus:outline-none focus:border-amber-500 shadow-sm"
           />
         </div>
         <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowCatManager(true)}
+            className="gap-2 text-xs"
+          >
+            <Tag className="w-4 h-4" /> Categorias
+          </Button>
           <Button
             variant="secondary"
             size="sm"
@@ -73,6 +133,7 @@ export function CamisasGrade() {
             <thead>
               <tr className="bg-slate-50 border-b border-slate-200">
                 <th className="p-3.5 text-left font-bold text-slate-600">Produto</th>
+                <th className="p-3.5 text-left font-bold text-slate-600">Categoria</th>
                 <th className="p-3.5 text-center font-bold text-slate-600">Grade (P / M / G / GG)</th>
                 <th className="p-3.5 text-right font-bold text-slate-600">Preco / Custo</th>
                 <th className="p-3.5 text-right font-bold text-slate-600">Lucro</th>
@@ -82,7 +143,7 @@ export function CamisasGrade() {
             <tbody>
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="p-8 text-center text-slate-400">
+                  <td colSpan={6} className="p-8 text-center text-slate-400">
                     Nenhum produto cadastrado.
                   </td>
                 </tr>
@@ -106,6 +167,9 @@ export function CamisasGrade() {
                             <div className="text-[11px] text-slate-400">{p.color}</div>
                           </div>
                         </div>
+                      </td>
+                      <td className="p-3.5">
+                        <span className="px-2 py-0.5 bg-amber-50 text-amber-700 rounded-md font-semibold text-[10px] border border-amber-100">{p.category || 'Oversized'}</span>
                       </td>
                       <td className="p-3.5 text-center">
                         <div className="flex items-center justify-center gap-1.5">
@@ -151,17 +215,64 @@ export function CamisasGrade() {
         </div>
       </div>
 
-      <ProductModal />
+      <ProductModal categories={allCategories} />
+
+      <Dialog open={showCatManager} onOpenChange={(open) => !open && setShowCatManager(false)}>
+        <DialogContent className="max-w-md rounded-3xl">
+          <DialogHeader>
+            <DialogTitle className="text-base font-bold text-slate-800">Gerenciar Categorias de Camisas</DialogTitle>
+          </DialogHeader>
+          <div className="mt-4 space-y-4">
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={newCatInput}
+                onChange={(e) => setNewCatInput(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleAddCategory()}
+                placeholder="Nova categoria..."
+                className="flex-1 text-xs bg-white border border-slate-200 rounded-xl px-3 py-2.5 focus:outline-none focus:border-amber-500"
+              />
+              <Button onClick={handleAddCategory} size="sm" className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs">
+                <Plus className="w-4 h-4" /> Criar
+              </Button>
+            </div>
+            <div className="space-y-1.5 max-h-60 overflow-y-auto">
+              {DEFAULT_CATEGORIES.map((c) => (
+                <div key={c} className="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl text-xs">
+                  <span className="font-medium text-slate-700">{c}</span>
+                  <span className="text-[10px] text-slate-400 font-semibold">PADRAO</span>
+                </div>
+              ))}
+              {customCategories.map((c) => (
+                <div key={c} className="flex items-center justify-between p-2.5 bg-amber-50 border border-amber-100 rounded-xl text-xs">
+                  <span className="font-medium text-slate-700">{c}</span>
+                  <button
+                    onClick={() => handleRemoveCategory(c)}
+                    className="text-rose-500 hover:text-rose-700 cursor-pointer p-1"
+                    title="Remover categoria"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ))}
+              {customCategories.length === 0 && (
+                <p className="text-xs text-slate-400 text-center py-3">Nenhuma categoria customizada criada.</p>
+              )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </section>
   );
 }
 
-function ProductModal() {
+function ProductModal({ categories }: { categories: string[] }) {
   const { productModalOpen, closeProductModal, editingProductId, products, addProduct, updateProduct } =
     useLouveStore();
   const [form, setForm] = useState({
     name: '',
     code: '',
+    category: 'Oversized',
     print: '',
     color: '',
     cost: '',
@@ -190,6 +301,7 @@ function ProductModal() {
       id: editingProduct?.id || 'prod_' + Date.now(),
       code: form.code,
       name: form.name,
+      category: form.category,
       print: form.print,
       color: form.color,
       cost: costNum,
@@ -228,6 +340,7 @@ function ProductModal() {
         setForm({
           name: editingProduct.name,
           code: editingProduct.code,
+          category: editingProduct.category || 'Oversized',
           print: editingProduct.print,
           color: editingProduct.color,
           cost: String(editingProduct.cost),
@@ -243,6 +356,7 @@ function ProductModal() {
         setForm({
           name: '',
           code: 'LM-ST-' + String(products.length + 1).padStart(2, '0'),
+          category: categories[0] || 'Oversized',
           print: '',
           color: '',
           cost: '',
@@ -311,6 +425,18 @@ function ProductModal() {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
+                  <Label className="text-[11px] font-bold text-slate-600">Categoria</Label>
+                  <select
+                    value={form.category}
+                    onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
+                    className="w-full text-xs bg-white border border-slate-200 rounded-xl p-2.5 mt-1 focus:outline-none"
+                  >
+                    {categories.map((c) => (
+                      <option key={c} value={c}>{c}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
                   <Label className="text-[11px] font-bold text-slate-600">Estampa / Arte</Label>
                   <Input
                     value={form.print}
@@ -319,15 +445,15 @@ function ProductModal() {
                     placeholder="Leao de Juda Costas"
                   />
                 </div>
-                <div>
-                  <Label className="text-[11px] font-bold text-slate-600">Cor</Label>
-                  <Input
-                    value={form.color}
-                    onChange={(e) => setForm((f) => ({ ...f, color: e.target.value }))}
-                    className="text-xs mt-1"
-                    placeholder="Preto Mineral"
-                  />
-                </div>
+              </div>
+              <div>
+                <Label className="text-[11px] font-bold text-slate-600">Cor</Label>
+                <Input
+                  value={form.color}
+                  onChange={(e) => setForm((f) => ({ ...f, color: e.target.value }))}
+                  className="text-xs mt-1"
+                  placeholder="Preto Mineral"
+                />
               </div>
             </div>
           </div>

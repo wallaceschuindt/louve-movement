@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useLouveStore } from '@/store/louve-store';
-import { Plus, Trash2, ShoppingBag, Minus } from 'lucide-react';
-import type { CartItem } from '@/types/louve';
+import { Plus, Trash2, ShoppingBag, Minus, Save } from 'lucide-react';
+import type { CartItem, SaleRecord } from '@/types/louve';
 import {
   Dialog,
   DialogContent,
@@ -22,7 +22,13 @@ export function RomaneioCamisasModal() {
     removeFromCart,
     updateCartItemQty,
     finalizeSale,
+    editingSaleId,
+    sales,
+    updateSale,
   } = useLouveStore();
+
+  const editingSale = editingSaleId ? sales.find((s) => s.id === editingSaleId) : null;
+  const isEditing = !!editingSaleId;
 
   const [clientName, setClientName] = useState('');
   const [clientPhone, setClientPhone] = useState('');
@@ -33,14 +39,33 @@ export function RomaneioCamisasModal() {
   const [selectedSize, setSelectedSize] = useState<'P' | 'M' | 'G' | 'GG'>('P');
   const [addQty, setAddQty] = useState(1);
 
+  useEffect(() => {
+    if (romaneioModalOpen && editingSale) {
+      setClientName(editingSale.client.name || '');
+      setClientPhone(editingSale.client.phone || '');
+      setClientEmail(editingSale.client.email || '');
+      setPaymentMethod(editingSale.paymentMethod || 'PIX');
+    } else if (romaneioModalOpen && !editingSale) {
+      setClientName('');
+      setClientPhone('');
+      setClientEmail('');
+      setPaymentMethod('PIX');
+    }
+  }, [romaneioModalOpen, editingSaleId]);
+
   const selectedProd = products.find((p) => p.id === selectedProduct);
   const maxQty = selectedProd ? selectedProd.sizes[selectedSize] : 0;
 
   const handleAddItem = () => {
     if (!selectedProd) return;
     if (addQty <= 0) return;
-    if (addQty > maxQty) {
-      alert('Estoque insuficiente! Disponivel: ' + maxQty + ' un de tamanho ' + selectedSize);
+    const existingInCart = currentCart
+      .filter((c) => c.productId === selectedProd.id && c.size === selectedSize)
+      .reduce((sum, c) => sum + c.qty, 0);
+    const availableForNew = maxQty - existingInCart;
+    const qtyToAdd = isEditing ? addQty : Math.min(addQty, availableForNew);
+    if (qtyToAdd <= 0) {
+      alert('Estoque insuficiente! Disponivel: ' + availableForNew + ' un de tamanho ' + selectedSize);
       return;
     }
     const item: CartItem = {
@@ -50,7 +75,7 @@ export function RomaneioCamisasModal() {
       print: selectedProd.print,
       color: selectedProd.color,
       size: selectedSize,
-      qty: addQty,
+      qty: qtyToAdd,
       price: selectedProd.price,
       cost: selectedProd.cost,
       image: selectedProd.image,
@@ -65,9 +90,9 @@ export function RomaneioCamisasModal() {
       return;
     }
 
-    const saleRecord = {
-      id: 'ROM-' + String(Math.floor(100000 + Math.random() * 900000)),
-      date: saleDate || new Date().toISOString().split('T')[0],
+    const saleRecord: SaleRecord = {
+      id: isEditing && editingSale ? editingSale.id : 'ROM-' + String(Math.floor(100000 + Math.random() * 900000)),
+      date: isEditing && editingSale ? editingSale.date : (saleDate || new Date().toISOString().split('T')[0]),
       client: {
         name: clientName || 'Cliente Geral',
         phone: clientPhone || '-',
@@ -79,7 +104,11 @@ export function RomaneioCamisasModal() {
       totalCost: currentCart.reduce((sum, i) => sum + i.cost * i.qty, 0),
     };
 
-    finalizeSale(saleRecord);
+    if (isEditing) {
+      updateSale(saleRecord);
+    } else {
+      finalizeSale(saleRecord);
+    }
     closeRomaneioModal();
   };
 
@@ -94,8 +123,12 @@ export function RomaneioCamisasModal() {
               <img src="/logo.jpeg" alt="" className="w-full h-full object-cover" />
             </div>
             <div>
-              <h3 className="font-bold text-base text-slate-800">Novo Romaneio de Venda</h3>
-              <p className="text-[11px] text-slate-400">Emissao com baixa de estoque automatica e recibo</p>
+              <h3 className="font-bold text-base text-slate-800">
+                {isEditing ? 'Editar Romaneio ' + editingSale?.id : 'Novo Romaneio de Venda'}
+              </h3>
+              <p className="text-[11px] text-slate-400">
+                {isEditing ? 'Altere os itens, cliente ou pagamento e salve' : 'Emissao com baixa de estoque automatica e recibo'}
+              </p>
             </div>
           </div>
         </div>
@@ -126,10 +159,18 @@ export function RomaneioCamisasModal() {
                 <option value="Dinheiro">Dinheiro</option>
               </select>
             </div>
-            <div>
-              <Label className="text-xs font-semibold text-slate-700">Data da Venda</Label>
-              <Input type="date" value={saleDate} readOnly className="text-xs mt-1" />
-            </div>
+            {isEditing && editingSale && (
+              <div>
+                <Label className="text-xs font-semibold text-slate-700">Data Original</Label>
+                <Input value={editingSale.date} readOnly className="text-xs mt-1" />
+              </div>
+            )}
+            {!isEditing && (
+              <div>
+                <Label className="text-xs font-semibold text-slate-700">Data da Venda</Label>
+                <Input type="date" value={saleDate} readOnly className="text-xs mt-1" />
+              </div>
+            )}
           </div>
 
           <div className="space-y-4 lg:col-span-2 flex flex-col">
@@ -155,7 +196,7 @@ export function RomaneioCamisasModal() {
               </div>
               <div className="sm:col-span-3">
                 <Label className="text-[11px] font-semibold text-slate-600">Qtd</Label>
-                <input type="number" min={1} max={maxQty || 999} value={addQty} onChange={(e) => setAddQty(Math.max(1, parseInt(e.target.value) || 1))} className="w-full text-xs bg-white border border-slate-200 rounded-xl p-2 mt-1 text-center focus:outline-none" />
+                <input type="number" min={1} max={isEditing ? 999 : (maxQty || 999)} value={addQty} onChange={(e) => setAddQty(Math.max(1, parseInt(e.target.value) || 1))} className="w-full text-xs bg-white border border-slate-200 rounded-xl p-2 mt-1 text-center focus:outline-none" />
               </div>
               <div className="sm:col-span-2">
                 <Button type="button" onClick={handleAddItem} className="w-full bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold">
@@ -203,7 +244,11 @@ export function RomaneioCamisasModal() {
                 <h3 className="text-2xl font-extrabold text-slate-900">R$ {total.toFixed(2)}</h3>
               </div>
               <Button onClick={handleFinalize} className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold shadow-lg shadow-amber-500/20">
-                Finalizar e Baixar Estoque
+                {isEditing ? (
+                  <><Save className="w-4 h-4 mr-1" /> Salvar Alteracoes</>
+                ) : (
+                  'Finalizar e Baixar Estoque'
+                )}
               </Button>
             </div>
           </div>

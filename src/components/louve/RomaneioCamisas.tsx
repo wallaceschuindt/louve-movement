@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useLouveStore } from '@/store/louve-store';
-import { MessageCircle, Eye, Trash2, Printer, Download, Receipt } from 'lucide-react';
+import { MessageCircle, Eye, Trash2, Printer, Download, Receipt, Edit3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -14,7 +14,7 @@ import { exportRomaneioPDF, exportAllRomaneiosPDF } from '@/lib/export-pdf';
 import type { SaleRecord } from '@/types/louve';
 
 export function RomaneioCamisas() {
-  const { sales, settings, deleteSale, openRomaneioModal } = useLouveStore();
+  const { sales, settings, deleteSale, openRomaneioModal, openRomaneioModalForEdit } = useLouveStore();
   const [viewSale, setViewSale] = useState<SaleRecord | null>(null);
 
   const handleWhatsApp = (s: SaleRecord) => {
@@ -108,6 +108,13 @@ export function RomaneioCamisas() {
                     <td className="p-3.5 text-right font-extrabold text-slate-900">R$ {s.total.toFixed(2)}</td>
                     <td className="p-3.5 text-center">
                       <div className="flex items-center justify-center gap-1">
+                        <button
+                          onClick={() => openRomaneioModalForEdit(s.id)}
+                          className="p-1.5 hover:bg-amber-50 text-amber-600 rounded-lg cursor-pointer"
+                          title="Editar romaneio"
+                        >
+                          <Edit3 className="w-4 h-4" />
+                        </button>
                         <button
                           onClick={() => handleWhatsApp(s)}
                           className="p-1.5 hover:bg-emerald-50 text-emerald-600 rounded-lg cursor-pointer"

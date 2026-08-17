@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useLouveStore } from '@/store/louve-store';
-import { Plus, Search, Edit3, Trash2, Upload, Download, FileText } from 'lucide-react';
+import { Plus, Search, Edit3, Trash2, Upload, Download, FileText, Tag, X } from 'lucide-react';
 import type { OtherProduct } from '@/types/louve';
 import { exportOtherProductsPDF } from '@/lib/export-pdf';
 import {
@@ -15,12 +15,61 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
-const CATEGORIES = ['Caneca', 'Caneta', 'Chaveiro', 'Bone', 'Mochila', 'Adesivo', 'Outro'];
+const DEFAULT_CATEGORIES = ['Caneca', 'Caneta', 'Chaveiro', 'Bone', 'Mochila', 'Adesivo', 'Outro'];
+const CAT_STORAGE_KEY = 'LOUVE_CUSTOM_CATEGORIES';
 const UNIT_TYPES = ['unidade', 'caixa', 'kit'] as const;
+
+function loadCustomCategories(): string[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const saved = localStorage.getItem(CAT_STORAGE_KEY);
+    return saved ? JSON.parse(saved) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveCustomCategories(cats: string[]) {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(CAT_STORAGE_KEY, JSON.stringify(cats));
+  } catch {
+    // storage full
+  }
+}
 
 export function OutrosProdutosTab() {
   const { otherProducts, openOtherProductModal, settings } = useLouveStore();
   const [search, setSearch] = useState('');
+  const [customCategories, setCustomCategories] = useState<string[]>([]);
+  const [showCatManager, setShowCatManager] = useState(false);
+  const [newCatInput, setNewCatInput] = useState('');
+
+  useEffect(() => {
+    setCustomCategories(loadCustomCategories());
+  }, []);
+
+  const allCategories = [...DEFAULT_CATEGORIES.filter((c) => !customCategories.includes(c)), ...customCategories];
+
+  const handleAddCategory = () => {
+    const trimmed = newCatInput.trim();
+    if (!trimmed) return;
+    const upper = trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
+    if (allCategories.some((c) => c.toLowerCase() === upper.toLowerCase())) {
+      alert('Categoria "' + upper + '" ja existe!');
+      return;
+    }
+    const updated = [...customCategories, upper];
+    setCustomCategories(updated);
+    saveCustomCategories(updated);
+    setNewCatInput('');
+  };
+
+  const handleRemoveCategory = (cat: string) => {
+    const updated = customCategories.filter((c) => c !== cat);
+    setCustomCategories(updated);
+    saveCustomCategories(updated);
+  };
 
   const filtered = otherProducts.filter(
     (p) =>
@@ -53,6 +102,14 @@ export function OutrosProdutosTab() {
           />
         </div>
         <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowCatManager(true)}
+            className="gap-2 text-xs"
+          >
+            <Tag className="w-4 h-4" /> Categorias
+          </Button>
           <Button
             variant="secondary"
             size="sm"
@@ -155,12 +212,58 @@ export function OutrosProdutosTab() {
         </div>
       </div>
 
-      <OtherProductModal />
+      <OtherProductModal categories={allCategories} />
+
+      <Dialog open={showCatManager} onOpenChange={(open) => !open && setShowCatManager(false)}>
+        <DialogContent className="max-w-md rounded-3xl">
+          <DialogHeader>
+            <DialogTitle className="text-base font-bold text-slate-800">Gerenciar Categorias</DialogTitle>
+          </DialogHeader>
+          <div className="mt-4 space-y-4">
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={newCatInput}
+                onChange={(e) => setNewCatInput(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleAddCategory()}
+                placeholder="Nova categoria..."
+                className="flex-1 text-xs bg-white border border-slate-200 rounded-xl px-3 py-2.5 focus:outline-none focus:border-amber-500"
+              />
+              <Button onClick={handleAddCategory} size="sm" className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs">
+                <Plus className="w-4 h-4" /> Criar
+              </Button>
+            </div>
+            <div className="space-y-1.5 max-h-60 overflow-y-auto">
+              {DEFAULT_CATEGORIES.map((c) => (
+                <div key={c} className="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl text-xs">
+                  <span className="font-medium text-slate-700">{c}</span>
+                  <span className="text-[10px] text-slate-400 font-semibold">PADRAO</span>
+                </div>
+              ))}
+              {customCategories.map((c) => (
+                <div key={c} className="flex items-center justify-between p-2.5 bg-amber-50 border border-amber-100 rounded-xl text-xs">
+                  <span className="font-medium text-slate-700">{c}</span>
+                  <button
+                    onClick={() => handleRemoveCategory(c)}
+                    className="text-rose-500 hover:text-rose-700 cursor-pointer p-1"
+                    title="Remover categoria"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ))}
+              {customCategories.length === 0 && (
+                <p className="text-xs text-slate-400 text-center py-3">Nenhuma categoria customizada criada.</p>
+              )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </section>
   );
 }
 
-function OtherProductModal() {
+function OtherProductModal({ categories }: { categories: string[] }) {
   const {
     otherProductModalOpen,
     closeOtherProductModal,
@@ -208,7 +311,7 @@ function OtherProductModal() {
           code: 'LM-OP-' + String(otherProducts.length + 1).padStart(2, '0'),
           name: '',
           description: '',
-          category: 'Caneca',
+          category: categories[0] || 'Outro',
           cost: '',
           price: '',
           minStock: '5',
@@ -324,7 +427,7 @@ function OtherProductModal() {
                     onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
                     className="w-full text-xs bg-white border border-slate-200 rounded-xl p-2.5 mt-1 focus:outline-none"
                   >
-                    {CATEGORIES.map((c) => (
+                    {categories.map((c) => (
                       <option key={c} value={c}>{c}</option>
                     ))}
                   </select>
