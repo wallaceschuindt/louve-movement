@@ -28,6 +28,7 @@ import {
   Legend,
 } from 'recharts';
 import { exportDashboardPDF } from '@/lib/export-pdf';
+import html2canvas from 'html2canvas';
 import type { SaleRecord } from '@/types/louve';
 
 const PIE_COLORS = ['#d97706', '#10b981'];
@@ -101,12 +102,10 @@ export function DashboardGeral() {
     let chartImgPie = '';
     try {
       if (barChartRef.current) {
-        const html2canvas = (await import('html2canvas')).default;
         const canvas = await html2canvas(barChartRef.current, { backgroundColor: '#ffffff', scale: 2 });
         chartImgBar = canvas.toDataURL('image/png');
       }
       if (pieChartRef.current) {
-        const html2canvas = (await import('html2canvas')).default;
         const canvas = await html2canvas(pieChartRef.current, { backgroundColor: '#ffffff', scale: 2 });
         chartImgPie = canvas.toDataURL('image/png');
       }

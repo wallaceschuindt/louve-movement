@@ -7,6 +7,7 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: true,
   },
   reactStrictMode: false,
+  transpilePackages: ["jspdf", "html2canvas"],
 };
 
 export default nextConfig;

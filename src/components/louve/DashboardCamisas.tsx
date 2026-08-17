@@ -9,6 +9,7 @@ import {
   PieChart, Pie, Cell, Legend,
 } from 'recharts';
 import { exportDashboardPDF } from '@/lib/export-pdf';
+import html2canvas from 'html2canvas';
 
 const SIZE_COLORS = ['#38bdf8', '#818cf8', '#f59e0b', '#ec4899'];
 
@@ -56,12 +57,10 @@ export function DashboardCamisas() {
     let chartImgSizes = '';
     try {
       if (salesChartRef.current) {
-        const html2canvas = (await import('html2canvas')).default;
         const canvas = await html2canvas(salesChartRef.current, { backgroundColor: '#ffffff', scale: 2 });
         chartImgSales = canvas.toDataURL('image/png');
       }
       if (sizesChartRef.current) {
-        const html2canvas = (await import('html2canvas')).default;
         const canvas = await html2canvas(sizesChartRef.current, { backgroundColor: '#ffffff', scale: 2 });
         chartImgSizes = canvas.toDataURL('image/png');
       }

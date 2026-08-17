@@ -10,18 +10,19 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { exportRomaneioPDF, exportAllRomaneiosPDF } from '@/lib/export-pdf';
+import { exportRomaneioPDF, exportAllRomaneiosPDF, sharePDFWhatsApp } from '@/lib/export-pdf';
 import type { OtherSaleRecord } from '@/types/louve';
 
 export function RomaneioProdutosTab() {
   const { otherSales, settings, deleteOtherSale, openOtherRomaneioModal } = useLouveStore();
   const [viewSale, setViewSale] = useState<OtherSaleRecord | null>(null);
 
-  const handleWhatsApp = (s: OtherSaleRecord) => {
-    const text = 'Romaneio ' + s.id + ' - ' + s.client.name + '\nData: ' + s.date + '\nTotal: R$ ' + s.total.toFixed(2) + '\nPagamento: ' + s.paymentMethod + '\n\nItens:\n' +
-      s.items.map((i) => '- ' + i.name + ' (' + i.category + ') x' + i.qty + ' = R$ ' + (i.price * i.qty).toFixed(2)).join('\n') +
-      '\n\nObrigado pela preferencia! ' + settings.brandName;
-    window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank');
+  const handleWhatsApp = async (s: OtherSaleRecord) => {
+    try {
+      await sharePDFWhatsApp(settings, s, true);
+    } catch (err) {
+      console.error('Erro ao enviar WhatsApp:', err);
+    }
   };
 
   const handleExportPDF = async (sale: OtherSaleRecord) => {

@@ -10,20 +10,19 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { exportRomaneioPDF, exportAllRomaneiosPDF } from '@/lib/export-pdf';
+import { exportRomaneioPDF, exportAllRomaneiosPDF, sharePDFWhatsApp } from '@/lib/export-pdf';
 import type { SaleRecord } from '@/types/louve';
 
 export function RomaneioCamisas() {
   const { sales, settings, deleteSale, openRomaneioModal, openRomaneioModalForEdit } = useLouveStore();
   const [viewSale, setViewSale] = useState<SaleRecord | null>(null);
 
-  const handleWhatsApp = (s: SaleRecord) => {
-    window.open(
-      'https://wa.me/?text=' + encodeURIComponent(
-        'Romaneio ' + s.id + ' - ' + s.client.name + '\nTotal: R$ ' + s.total.toFixed(2)
-      ),
-      '_blank'
-    );
+  const handleWhatsApp = async (s: SaleRecord) => {
+    try {
+      await sharePDFWhatsApp(settings, s, false);
+    } catch (err) {
+      console.error('Erro ao enviar WhatsApp:', err);
+    }
   };
 
   const handleExportPDF = async (sale: SaleRecord) => {

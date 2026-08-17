@@ -9,6 +9,7 @@ import {
   PieChart, Pie, Cell, Legend,
 } from 'recharts';
 import { exportFinancePDF } from '@/lib/export-pdf';
+import html2canvas from 'html2canvas';
 
 const PIE_COLORS = ['#d97706', '#3b82f6'];
 
@@ -86,13 +87,11 @@ export function FinanceiroGeral() {
       let chartImgPayment = '';
       try {
         if (lineChartRef.current) {
-          const html2canvas = (await import('html2canvas')).default;
           const canvasLine = await html2canvas(lineChartRef.current, { backgroundColor: '#ffffff', scale: 2 });
           chartImgMonthly = canvasLine.toDataURL('image/png');
         }
         if (pieChartRef.current) {
-          const html2canvasPie = (await import('html2canvas')).default;
-          const canvasPie = await html2canvasPie(pieChartRef.current, { backgroundColor: '#ffffff', scale: 2 });
+          const canvasPie = await html2canvas(pieChartRef.current, { backgroundColor: '#ffffff', scale: 2 });
           chartImgPayment = canvasPie.toDataURL('image/png');
         }
       } catch (chartErr) {

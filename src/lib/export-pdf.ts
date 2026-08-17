@@ -1,3 +1,7 @@
+'use client';
+
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 import type { Product, SaleRecord, OtherProduct, OtherSaleRecord, AppSettings } from '@/types/louve';
 
 const LOGO_FALLBACK = '/logo.jpeg';
@@ -8,7 +12,7 @@ function getLogo(settings: AppSettings): string {
 
 function imgToHtml(src: string, w: number, h: number, radius = 8): string {
   if (!src) return '<div style="width:' + w + 'px;height:' + h + 'px;border-radius:' + radius + 'px;background:#e2e8f0;display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:' + Math.floor(w / 3) + 'px;">SEM</div>';
-  return '<img src="' + src + '" style="width:' + w + 'px;height:' + h + 'px;border-radius:' + radius + 'px;object-fit:cover;" />';
+  return '<img src="' + src + '" crossorigin="anonymous" style="width:' + w + 'px;height:' + h + 'px;border-radius:' + radius + 'px;object-fit:cover;" />';
 }
 
 function waitForImages(container: HTMLDivElement): Promise<void> {
@@ -45,61 +49,189 @@ function waitForImages(container: HTMLDivElement): Promise<void> {
   ).then(() => {});
 }
 
-async function renderAndDownload(html: string, filename: string) {
-  let container: HTMLDivElement | null = null;
+async function renderHTMLToCanvas(html: string): Promise<HTMLCanvasElement> {
+  const container = document.createElement('div');
+  container.style.cssText = 'position:fixed;left:-9999px;top:0;width:700px;background:white;font-family:Arial,Helvetica,sans-serif;z-index:99999;';
+  container.innerHTML = html;
+  document.body.appendChild(container);
+
   try {
-    const jsPDF = (await import('jspdf')).default;
-    const html2canvas = (await import('html2canvas')).default;
-
-    container = document.createElement('div');
-    container.style.cssText = 'position:fixed;top:0;left:0;width:700px;padding:24px;background:white;font-family:sans-serif;z-index:-9999;opacity:0;pointer-events:none;overflow:visible;';
-    container.innerHTML = html;
-    document.body.appendChild(container);
-
     await waitForImages(container);
-    await new Promise<void>((r) => setTimeout(r, 800));
+    await new Promise<void>((r) => setTimeout(r, 500));
 
     const canvas = await html2canvas(container, {
       scale: 2,
       useCORS: true,
+      allowTaint: true,
       logging: false,
       windowWidth: 700,
       backgroundColor: '#ffffff',
     });
-
-    const pdf = new jsPDF('p', 'mm', 'a4');
-    const imgWidth = 190;
-    const pageHeight = 277;
-    const imgHeight = (canvas.height * imgWidth) / canvas.width;
-
-    if (imgHeight <= pageHeight) {
-      pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 10, 10, imgWidth, imgHeight);
-    } else {
-      const totalPages = Math.ceil(imgHeight / pageHeight);
-      for (let i = 0; i < totalPages; i++) {
-        if (i > 0) pdf.addPage();
-        const srcY = (i * pageHeight / imgHeight) * canvas.height;
-        const srcH = Math.min((pageHeight / imgHeight) * canvas.height, canvas.height - srcY);
-        const slice = document.createElement('canvas');
-        slice.width = canvas.width;
-        slice.height = srcH;
-        const ctx = slice.getContext('2d');
-        if (ctx) {
-          ctx.drawImage(canvas, 0, srcY, canvas.width, srcH, 0, 0, canvas.width, srcH);
-        }
-        const sliceImgH = (srcH * imgWidth) / canvas.width;
-        pdf.addImage(slice.toDataURL('image/png'), 'PNG', 10, 10, imgWidth, sliceImgH);
-      }
+    return canvas;
+  } finally {
+    if (container.parentNode) {
+      container.parentNode.removeChild(container);
     }
+  }
+}
+
+function canvasToPDF(canvas: HTMLCanvasElement): jsPDF {
+  const pdf = new jsPDF('p', 'mm', 'a4');
+  const imgWidth = 190;
+  const pageHeight = 277;
+  const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+  if (imgHeight <= pageHeight) {
+    pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 10, 10, imgWidth, imgHeight);
+  } else {
+    const totalPages = Math.ceil(imgHeight / pageHeight);
+    for (let i = 0; i < totalPages; i++) {
+      if (i > 0) pdf.addPage();
+      const srcY = (i * pageHeight / imgHeight) * canvas.height;
+      const srcH = Math.min((pageHeight / imgHeight) * canvas.height, canvas.height - srcY);
+      const slice = document.createElement('canvas');
+      slice.width = canvas.width;
+      slice.height = srcH;
+      const ctx = slice.getContext('2d');
+      if (ctx) {
+        ctx.drawImage(canvas, 0, srcY, canvas.width, srcH, 0, 0, canvas.width, srcH);
+      }
+      const sliceImgH = (srcH * imgWidth) / canvas.width;
+      pdf.addImage(slice.toDataURL('image/png'), 'PNG', 10, 10, imgWidth, sliceImgH);
+    }
+  }
+  return pdf;
+}
+
+async function renderAndDownload(html: string, filename: string) {
+  try {
+    const canvas = await renderHTMLToCanvas(html);
+    const pdf = canvasToPDF(canvas);
     pdf.save(filename);
   } catch (err) {
     console.error('PDF export error:', err);
     alert('Erro ao gerar PDF. Tente novamente.');
-  } finally {
-    if (container && container.parentNode) {
-      container.parentNode.removeChild(container);
+  }
+}
+
+async function renderToBlob(html: string, filename: string): Promise<Blob | null> {
+  try {
+    const canvas = await renderHTMLToCanvas(html);
+    const pdf = canvasToPDF(canvas);
+    return pdf.output('blob');
+  } catch (err) {
+    console.error('PDF blob error:', err);
+    return null;
+  }
+}
+
+export async function sharePDFWhatsApp(
+  settings: AppSettings,
+  sale: SaleRecord | OtherSaleRecord,
+  isOther: boolean
+) {
+  const html = buildRomaneioHtml(settings, sale, isOther);
+  const filename = 'Romaneio_' + sale.id + '_' + sale.client.name.replace(/\s+/g, '_') + '.pdf';
+
+  const blob = await renderToBlob(html, filename);
+  if (!blob) {
+    alert('Erro ao gerar PDF para WhatsApp. Tente exportar o PDF primeiro.');
+    return;
+  }
+
+  const phone = sale.client.phone.replace(/\D/g, '');
+  const baseMsg = 'Ola ' + sale.client.name + '! Segue seu romaneio ' + sale.id + ' - Total: R$ ' + sale.total.toFixed(2);
+
+  if (navigator.share && navigator.canShare) {
+    const file = new File([blob], filename, { type: 'application/pdf' });
+    const shareData = {
+      title: 'Romaneio ' + sale.id,
+      text: baseMsg,
+      files: [file],
+    };
+    if (navigator.canShare(shareData)) {
+      try {
+        await navigator.share(shareData);
+        return;
+      } catch (e) {
+        if ((e as DOMException).name === 'AbortError') return;
+      }
     }
   }
+
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 10000);
+
+  const waMsg = baseMsg + '\n\n*PDF do romaneio foi salvo no seu dispositivo. Por favor, anexe o arquivo PDF ao enviar esta mensagem.*';
+  const waUrl = phone
+    ? 'https://wa.me/' + phone + '?text=' + encodeURIComponent(waMsg)
+    : 'https://wa.me/?text=' + encodeURIComponent(waMsg);
+  window.open(waUrl, '_blank');
+}
+
+function buildRomaneioHtml(settings: AppSettings, sale: SaleRecord | OtherSaleRecord, isOther: boolean): string {
+  const logo = getLogo(settings);
+  let itemsHtml = '';
+  if (!isOther) {
+    const s = sale as SaleRecord;
+    itemsHtml = s.items.map((i, idx) =>
+      '<tr style="background-color:' + (idx % 2 === 0 ? '#fff' : '#f8fafc') + ';">' +
+        '<td style="padding:10px;border-bottom:1px solid #e2e8f0;"><div style="display:flex;align-items:center;gap:8px;">' +
+          (i.image ? '<img src="' + i.image + '" crossorigin="anonymous" style="width:36px;height:36px;border-radius:8px;object-fit:cover;" />' : '') +
+          '<div><div style="font-weight:bold;">' + i.name + '</div><div style="font-size:9px;color:#94a3b8;">' + i.code + '</div></div>' +
+        '</div></td>' +
+        '<td style="padding:10px;border-bottom:1px solid #e2e8f0;">' + i.print + ' (' + i.color + ')</td>' +
+        '<td style="padding:10px;border-bottom:1px solid #e2e8f0;text-align:center;font-weight:bold;">' + i.size + '</td>' +
+        '<td style="padding:10px;border-bottom:1px solid #e2e8f0;text-align:center;font-weight:bold;">' + i.qty + '</td>' +
+        '<td style="padding:10px;border-bottom:1px solid #e2e8f0;text-align:right;">R$ ' + i.price.toFixed(2) + '</td>' +
+        '<td style="padding:10px;border-bottom:1px solid #e2e8f0;text-align:right;font-weight:bold;">R$ ' + (i.price * i.qty).toFixed(2) + '</td>' +
+      '</tr>'
+    ).join('');
+  } else {
+    const s = sale as OtherSaleRecord;
+    itemsHtml = s.items.map((i, idx) =>
+      '<tr style="background-color:' + (idx % 2 === 0 ? '#fff' : '#f8fafc') + ';">' +
+        '<td style="padding:10px;border-bottom:1px solid #e2e8f0;"><div style="display:flex;align-items:center;gap:8px;">' +
+          (i.image ? '<img src="' + i.image + '" crossorigin="anonymous" style="width:36px;height:36px;border-radius:8px;object-fit:cover;" />' : '') +
+          '<div><div style="font-weight:bold;">' + i.name + '</div><div style="font-size:9px;color:#94a3b8;">' + i.code + '</div></div>' +
+        '</div></td>' +
+        '<td style="padding:10px;border-bottom:1px solid #e2e8f0;">' + i.category + '</td>' +
+        '<td style="padding:10px;border-bottom:1px solid #e2e8f0;text-align:center;">' + i.unitType + '</td>' +
+        '<td style="padding:10px;border-bottom:1px solid #e2e8f0;text-align:center;font-weight:bold;">' + i.qty + '</td>' +
+        '<td style="padding:10px;border-bottom:1px solid #e2e8f0;text-align:right;">R$ ' + i.price.toFixed(2) + '</td>' +
+        '<td style="padding:10px;border-bottom:1px solid #e2e8f0;text-align:right;font-weight:bold;">R$ ' + (i.price * i.qty).toFixed(2) + '</td>' +
+      '</tr>'
+    ).join('');
+  }
+
+  return '<div style="font-family:Arial,Helvetica,sans-serif;padding:24px;border:2px solid #d97706;border-radius:16px;">' +
+    '<div style="display:flex;justify-content:space-between;align-items:center;border-bottom:3px solid #d97706;padding-bottom:12px;">' +
+      '<div style="display:flex;align-items:center;gap:12px;">' +
+        imgToHtml(logo, 48, 48, 10) +
+        '<div><h1 style="font-size:20px;font-weight:bold;margin:0;color:#1e293b;">' + settings.brandName + '</h1><p style="font-size:11px;color:#64748b;margin:2px 0 0 0;">' + settings.brandSubtitle + '</p></div>' +
+      '</div>' +
+      '<div style="text-align:right;"><h2 style="font-size:18px;color:#d97706;margin:0;">' + sale.id + '</h2><span style="font-size:11px;color:#64748b;">Data: ' + sale.date + '</span></div>' +
+    '</div>' +
+    '<div style="margin:18px 0;font-size:12px;line-height:1.8;background:#f8fafc;padding:12px;border-radius:10px;">' +
+      '<strong>Cliente:</strong> ' + sale.client.name + '<br/>' +
+      '<strong>WhatsApp:</strong> ' + sale.client.phone + ' | <strong>E-mail:</strong> ' + sale.client.email + '<br/>' +
+      '<strong>Forma de Pagamento:</strong> ' + sale.paymentMethod +
+    '</div>' +
+    '<table style="width:100%;border-collapse:collapse;margin-top:12px;font-size:11px;"><thead><tr style="background-color:#d97706;color:white;">' +
+      (!isOther
+        ? '<th style="padding:10px;text-align:left;">Produto</th><th style="padding:10px;text-align:left;">Estampa & Cor</th><th style="padding:10px;text-align:center;">Tam.</th><th style="padding:10px;text-align:center;">Qtd.</th><th style="padding:10px;text-align:right;">Valor Unit.</th><th style="padding:10px;text-align:right;">Subtotal</th>'
+        : '<th style="padding:10px;text-align:left;">Produto</th><th style="padding:10px;text-align:left;">Categoria</th><th style="padding:10px;text-align:center;">Tipo</th><th style="padding:10px;text-align:center;">Qtd.</th><th style="padding:10px;text-align:right;">Valor Unit.</th><th style="padding:10px;text-align:right;">Subtotal</th>')
+      + '</tr></thead><tbody>' + itemsHtml + '</tbody></table>' +
+    '<div style="margin-top:24px;text-align:right;background:linear-gradient(135deg,#fffbeb,#fef3c7);padding:16px;border-radius:12px;border:1px solid #fde68a;">' +
+      '<span style="font-size:13px;color:#92400e;">Valor Total a Pagar:</span><br/>' +
+      '<h2 style="font-size:28px;font-weight:bold;margin:4px 0 0 0;color:#0f172a;">R$ ' + sale.total.toFixed(2) + '</h2>' +
+      '<p style="font-size:11px;color:#64748b;margin-top:6px;">Chave PIX: <strong>' + settings.pixKey + '</strong></p>' +
+    '</div>' +
+  '</div>';
 }
 
 export async function exportDashboardPDF(
@@ -127,7 +259,7 @@ export async function exportDashboardPDF(
     salesHtml = '<div style="border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;"><div style="background:#f8fafc;padding:8px 12px;font-size:11px;font-weight:bold;color:#334155;border-bottom:1px solid #e2e8f0;">Ultimas Vendas</div><table style="width:100%;border-collapse:collapse;font-size:10px;"><tr style="background:#f1f5f9;"><th style="padding:8px;text-align:left;">Romaneio</th><th style="padding:8px;">Data</th><th style="padding:8px;text-align:left;">Cliente</th><th style="padding:8px;">Pecas</th><th style="padding:8px;text-align:right;">Total</th></tr>' + rows + '</table></div>';
   }
 
-  const html = '<div style="font-family:sans-serif;padding:24px;">' +
+  const html = '<div style="font-family:Arial,Helvetica,sans-serif;padding:24px;">' +
     '<div style="display:flex;align-items:center;gap:12px;border-bottom:3px solid #d97706;padding-bottom:12px;margin-bottom:16px;">' +
       imgToHtml(logo, 48, 48, 10) +
       '<div><h1 style="font-size:20px;font-weight:bold;margin:0;color:#1e293b;">' + settings.brandName + '</h1><p style="font-size:11px;color:#64748b;margin:2px 0 0 0;">' + title + '</p></div>' +
@@ -172,7 +304,7 @@ export async function exportProductsPDF(settings: AppSettings, products: Product
     '</div>';
   }).join('');
 
-  const html = '<div style="font-family:sans-serif;padding:24px;">' +
+  const html = '<div style="font-family:Arial,Helvetica,sans-serif;padding:24px;">' +
     '<div style="display:flex;align-items:center;gap:12px;border-bottom:3px solid #d97706;padding-bottom:12px;margin-bottom:16px;">' +
       imgToHtml(logo, 48, 48, 10) +
       '<div><h1 style="font-size:20px;font-weight:bold;margin:0;color:#1e293b;">' + settings.brandName + '</h1><p style="font-size:11px;color:#64748b;margin:2px 0 0 0;">' + title + '</p></div>' +
@@ -192,7 +324,7 @@ export async function exportStockPDF(settings: AppSettings, products: Product[],
     return '<tr style="background:' + (idx % 2 === 0 ? '#fff' : '#f8fafc') + ';"><td style="padding:8px;"><div style="display:flex;align-items:center;gap:8px;">' + imgToHtml(p.image, 28, 28, 6) + '<div><div style="font-weight:bold;">' + p.name + '</div><div style="color:#94a3b8;font-size:9px;">' + p.code + ' | ' + p.color + '</div></div></div></td><td style="padding:8px;text-align:center;font-weight:bold;">' + p.sizes.P + '</td><td style="padding:8px;text-align:center;font-weight:bold;">' + p.sizes.M + '</td><td style="padding:8px;text-align:center;font-weight:bold;">' + p.sizes.G + '</td><td style="padding:8px;text-align:center;font-weight:bold;">' + p.sizes.GG + '</td><td style="padding:8px;text-align:center;font-weight:bold;color:' + (isLow ? '#dc2626' : '#0f172a') + ';">' + total + '</td><td style="padding:8px;text-align:center;">' + p.minStock + '</td><td style="padding:8px;text-align:center;"><span style="padding:2px 8px;border-radius:99px;font-size:9px;font-weight:bold;color:white;background:' + (isLow ? '#dc2626' : '#10b981') + ';">' + (isLow ? 'BAIXO' : 'OK') + '</span></td></tr>';
   }).join('');
 
-  const html = '<div style="font-family:sans-serif;padding:24px;">' +
+  const html = '<div style="font-family:Arial,Helvetica,sans-serif;padding:24px;">' +
     '<div style="display:flex;align-items:center;gap:12px;border-bottom:3px solid #d97706;padding-bottom:12px;margin-bottom:16px;">' +
       imgToHtml(logo, 48, 48, 10) +
       '<div><h1 style="font-size:20px;font-weight:bold;margin:0;color:#1e293b;">' + settings.brandName + '</h1><p style="font-size:11px;color:#64748b;margin:2px 0 0 0;">' + title + '</p></div>' +
@@ -219,7 +351,7 @@ export async function exportFinancePDF(
   title: string
 ) {
   const logo = getLogo(settings);
-  const html = '<div style="font-family:sans-serif;padding:24px;">' +
+  const html = '<div style="font-family:Arial,Helvetica,sans-serif;padding:24px;">' +
     '<div style="display:flex;align-items:center;gap:12px;border-bottom:3px solid #d97706;padding-bottom:12px;margin-bottom:16px;">' +
       imgToHtml(logo, 48, 48, 10) +
       '<div><h1 style="font-size:20px;font-weight:bold;margin:0;color:#1e293b;">' + settings.brandName + '</h1><p style="font-size:11px;color:#64748b;margin:2px 0 0 0;">' + title + '</p></div>' +
@@ -272,7 +404,7 @@ export async function exportOtherProductsPDF(settings: AppSettings, products: Ot
     '</div>';
   }).join('');
 
-  const html = '<div style="font-family:sans-serif;padding:24px;">' +
+  const html = '<div style="font-family:Arial,Helvetica,sans-serif;padding:24px;">' +
     '<div style="display:flex;align-items:center;gap:12px;border-bottom:3px solid #d97706;padding-bottom:12px;margin-bottom:16px;">' +
       imgToHtml(logo, 48, 48, 10) +
       '<div><h1 style="font-size:20px;font-weight:bold;margin:0;color:#1e293b;">' + settings.brandName + '</h1><p style="font-size:11px;color:#64748b;margin:2px 0 0 0;">Catalogo de Outros Produtos</p></div>' +
@@ -291,7 +423,7 @@ export async function exportOtherStockPDF(settings: AppSettings, products: Other
     return '<tr style="background:' + (idx % 2 === 0 ? '#fff' : '#f8fafc') + ';"><td style="padding:8px;"><div style="display:flex;align-items:center;gap:8px;">' + imgToHtml(p.image, 28, 28, 6) + '<div><div style="font-weight:bold;">' + p.name + '</div><div style="color:#94a3b8;font-size:9px;">' + p.code + ' | ' + p.category + '</div></div></div></td><td style="padding:8px;text-align:center;">' + p.unitType + '</td><td style="padding:8px;text-align:center;font-weight:bold;">' + p.stock + '</td><td style="padding:8px;text-align:center;">' + p.minStock + '</td><td style="padding:8px;text-align:right;font-weight:bold;">R$ ' + p.price.toFixed(2) + '</td><td style="padding:8px;text-align:center;"><span style="padding:2px 8px;border-radius:99px;font-size:9px;font-weight:bold;color:white;background:' + (isLow ? '#dc2626' : '#10b981') + ';">' + (isLow ? 'BAIXO' : 'OK') + '</span></td></tr>';
   }).join('');
 
-  const html = '<div style="font-family:sans-serif;padding:24px;">' +
+  const html = '<div style="font-family:Arial,Helvetica,sans-serif;padding:24px;">' +
     '<div style="display:flex;align-items:center;gap:12px;border-bottom:3px solid #d97706;padding-bottom:12px;margin-bottom:16px;">' +
       imgToHtml(logo, 48, 48, 10) +
       '<div><h1 style="font-size:20px;font-weight:bold;margin:0;color:#1e293b;">' + settings.brandName + '</h1><p style="font-size:11px;color:#64748b;margin:2px 0 0 0;">Estoque de Outros Produtos</p></div>' +
@@ -304,65 +436,7 @@ export async function exportOtherStockPDF(settings: AppSettings, products: Other
 }
 
 export async function exportRomaneioPDF(settings: AppSettings, sale: SaleRecord | OtherSaleRecord, isOther: boolean) {
-  const logo = getLogo(settings);
-  let itemsHtml = '';
-  if (!isOther) {
-    const s = sale as SaleRecord;
-    itemsHtml = s.items.map((i, idx) =>
-      '<tr style="background-color:' + (idx % 2 === 0 ? '#fff' : '#f8fafc') + ';">' +
-        '<td style="padding:10px;border-bottom:1px solid #e2e8f0;"><div style="display:flex;align-items:center;gap:8px;">' +
-          (i.image ? '<img src="' + i.image + '" style="width:36px;height:36px;border-radius:8px;object-fit:cover;" />' : '') +
-          '<div><div style="font-weight:bold;">' + i.name + '</div><div style="font-size:9px;color:#94a3b8;">' + i.code + '</div></div>' +
-        '</div></td>' +
-        '<td style="padding:10px;border-bottom:1px solid #e2e8f0;">' + i.print + ' (' + i.color + ')</td>' +
-        '<td style="padding:10px;border-bottom:1px solid #e2e8f0;text-align:center;font-weight:bold;">' + i.size + '</td>' +
-        '<td style="padding:10px;border-bottom:1px solid #e2e8f0;text-align:center;font-weight:bold;">' + i.qty + '</td>' +
-        '<td style="padding:10px;border-bottom:1px solid #e2e8f0;text-align:right;">R$ ' + i.price.toFixed(2) + '</td>' +
-        '<td style="padding:10px;border-bottom:1px solid #e2e8f0;text-align:right;font-weight:bold;">R$ ' + (i.price * i.qty).toFixed(2) + '</td>' +
-      '</tr>'
-    ).join('');
-  } else {
-    const s = sale as OtherSaleRecord;
-    itemsHtml = s.items.map((i, idx) =>
-      '<tr style="background-color:' + (idx % 2 === 0 ? '#fff' : '#f8fafc') + ';">' +
-        '<td style="padding:10px;border-bottom:1px solid #e2e8f0;"><div style="display:flex;align-items:center;gap:8px;">' +
-          (i.image ? '<img src="' + i.image + '" style="width:36px;height:36px;border-radius:8px;object-fit:cover;" />' : '') +
-          '<div><div style="font-weight:bold;">' + i.name + '</div><div style="font-size:9px;color:#94a3b8;">' + i.code + '</div></div>' +
-        '</div></td>' +
-        '<td style="padding:10px;border-bottom:1px solid #e2e8f0;">' + i.category + '</td>' +
-        '<td style="padding:10px;border-bottom:1px solid #e2e8f0;text-align:center;">' + i.unitType + '</td>' +
-        '<td style="padding:10px;border-bottom:1px solid #e2e8f0;text-align:center;font-weight:bold;">' + i.qty + '</td>' +
-        '<td style="padding:10px;border-bottom:1px solid #e2e8f0;text-align:right;">R$ ' + i.price.toFixed(2) + '</td>' +
-        '<td style="padding:10px;border-bottom:1px solid #e2e8f0;text-align:right;font-weight:bold;">R$ ' + (i.price * i.qty).toFixed(2) + '</td>' +
-      '</tr>'
-    ).join('');
-  }
-
-  const html = '<div style="font-family:sans-serif;padding:24px;border:2px solid #d97706;border-radius:16px;">' +
-    '<div style="display:flex;justify-content:space-between;align-items:center;border-bottom:3px solid #d97706;padding-bottom:12px;">' +
-      '<div style="display:flex;align-items:center;gap:12px;">' +
-        imgToHtml(logo, 48, 48, 10) +
-        '<div><h1 style="font-size:20px;font-weight:bold;margin:0;color:#1e293b;">' + settings.brandName + '</h1><p style="font-size:11px;color:#64748b;margin:2px 0 0 0;">' + settings.brandSubtitle + '</p></div>' +
-      '</div>' +
-      '<div style="text-align:right;"><h2 style="font-size:18px;color:#d97706;margin:0;">' + sale.id + '</h2><span style="font-size:11px;color:#64748b;">Data: ' + sale.date + '</span></div>' +
-    '</div>' +
-    '<div style="margin:18px 0;font-size:12px;line-height:1.8;background:#f8fafc;padding:12px;border-radius:10px;">' +
-      '<strong>Cliente:</strong> ' + sale.client.name + '<br/>' +
-      '<strong>WhatsApp:</strong> ' + sale.client.phone + ' | <strong>E-mail:</strong> ' + sale.client.email + '<br/>' +
-      '<strong>Forma de Pagamento:</strong> ' + sale.paymentMethod +
-    '</div>' +
-    '<table style="width:100%;border-collapse:collapse;margin-top:12px;font-size:11px;"><thead><tr style="background-color:#d97706;color:white;">' +
-      (!isOther
-        ? '<th style="padding:10px;text-align:left;">Produto</th><th style="padding:10px;text-align:left;">Estampa & Cor</th><th style="padding:10px;text-align:center;">Tam.</th><th style="padding:10px;text-align:center;">Qtd.</th><th style="padding:10px;text-align:right;">Valor Unit.</th><th style="padding:10px;text-align:right;">Subtotal</th>'
-        : '<th style="padding:10px;text-align:left;">Produto</th><th style="padding:10px;text-align:left;">Categoria</th><th style="padding:10px;text-align:center;">Tipo</th><th style="padding:10px;text-align:center;">Qtd.</th><th style="padding:10px;text-align:right;">Valor Unit.</th><th style="padding:10px;text-align:right;">Subtotal</th>')
-      + '</tr></thead><tbody>' + itemsHtml + '</tbody></table>' +
-    '<div style="margin-top:24px;text-align:right;background:linear-gradient(135deg,#fffbeb,#fef3c7);padding:16px;border-radius:12px;border:1px solid #fde68a;">' +
-      '<span style="font-size:13px;color:#92400e;">Valor Total a Pagar:</span><br/>' +
-      '<h2 style="font-size:28px;font-weight:bold;margin:4px 0 0 0;color:#0f172a;">R$ ' + sale.total.toFixed(2) + '</h2>' +
-      '<p style="font-size:11px;color:#64748b;margin-top:6px;">Chave PIX: <strong>' + settings.pixKey + '</strong></p>' +
-    '</div>' +
-  '</div>';
-
+  const html = buildRomaneioHtml(settings, sale, isOther);
   await renderAndDownload(html, 'Romaneio_' + sale.id + '_' + sale.client.name.replace(/\s+/g, '_') + '.pdf');
 }
 
@@ -375,7 +449,7 @@ export async function exportAllRomaneiosPDF(settings: AppSettings, sales: (SaleR
       itemsRows = sale.items.map((i, idx) =>
         '<tr style="background:' + (idx % 2 === 0 ? '#fff' : '#f8fafc') + ';">' +
           '<td style="padding:6px;"><div style="display:flex;align-items:center;gap:6px;">' +
-            (i.image ? '<img src="' + i.image + '" style="width:28px;height:28px;border-radius:6px;object-fit:cover;" />' : '') +
+            (i.image ? '<img src="' + i.image + '" crossorigin="anonymous" style="width:28px;height:28px;border-radius:6px;object-fit:cover;" />' : '') +
             '<span>' + i.name + '</span></div></td>' +
           '<td style="padding:6px;text-align:center;">' + i.size + '</td>' +
           '<td style="padding:6px;text-align:center;">' + i.qty + '</td>' +
@@ -408,7 +482,7 @@ export async function exportAllRomaneiosPDF(settings: AppSettings, sales: (SaleR
       '</div></div>';
   }).join('');
 
-  const html = '<div style="font-family:sans-serif;padding:24px;">' +
+  const html = '<div style="font-family:Arial,Helvetica,sans-serif;padding:24px;">' +
     '<div style="display:flex;align-items:center;gap:12px;border-bottom:3px solid #d97706;padding-bottom:12px;margin-bottom:16px;">' +
       imgToHtml(logo, 48, 48, 10) +
       '<div><h1 style="font-size:20px;font-weight:bold;margin:0;color:#1e293b;">' + settings.brandName + '</h1><p style="font-size:11px;color:#64748b;">' + title + '</p></div>' +
