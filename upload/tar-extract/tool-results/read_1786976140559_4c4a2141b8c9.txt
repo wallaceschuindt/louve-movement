@@ -1,0 +1,502 @@
+     1→   301→   301→   301→                \</section\>
+     2→   302→   302→   302→
+     3→   303→   303→   303→                \<\!-- 2\. ABA PRODUTOS \--\>  
+     4→   304→   304→   304→                \<section id="tab-produtos" class="hidden space-y-4"\>  
+     5→   305→   305→   305→                    \<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3"\>  
+     6→   306→   306→   306→                        \<div class="flex items-center gap-2"\>  
+     7→   307→   307→   307→                            \<input type="text" id="searchProductInput" oninput="renderProductsTable()" placeholder="Buscar por nome, estampa, cor ou código..." class="text-xs bg-white border border-slate-200 rounded-xl px-4 py-2.5 w-72 focus:outline-none focus:border-amber-500 shadow-sm"\>  
+     8→   308→   308→   308→                        \</div\>  
+     9→   309→   309→   309→                        \<div class="flex items-center gap-2"\>  
+    10→   310→   310→   310→                            \<button onclick="exportProductsPDF()" class="flex items-center gap-2 bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow-sm transition"\>  
+    11→   311→   311→   311→                                \<i data-lucide="file-text" class="w-4 h-4"\>\</i\> Exportar Catálogo PDF  
+    12→   312→   312→   312→                            \</button\>  
+    13→   313→   313→   313→                            \<button onclick="openProductModal()" class="flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-bold px-4 py-2.5 rounded-xl shadow-sm transition"\>  
+    14→   314→   314→   314→                                \<i data-lucide="plus" class="w-4 h-4"\>\</i\> Cadastrar Camisa  
+    15→   315→   315→   315→                            \</button\>  
+    16→   316→   316→   316→                        \</div\>  
+    17→   317→   317→   317→                    \</div\>
+    18→   318→   318→   318→
+    19→   319→   319→   319→                    \<\!-- Tabela de Produtos \--\>  
+    20→   320→   320→   320→                    \<div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden" id="productsTableContainer"\>  
+    21→   321→   321→   321→                        \<div class="overflow-x-auto"\>  
+    22→   322→   322→   322→                            \<table class="w-full text-left text-xs text-slate-600"\>  
+    23→   323→   323→   323→                                \<thead class="bg-slate-50 border-b border-slate-200 text-slate-700 uppercase font-semibold"\>  
+    24→   324→   324→   324→                                    \<tr\>  
+    25→   325→   325→   325→                                        \<th class="p-3.5"\>Foto\</th\>  
+    26→   326→   326→   326→                                        \<th class="p-3.5"\>Código / Nome\</th\>  
+    27→   327→   327→   327→                                        \<th class="p-3.5"\>Estampa & Cor\</th\>  
+    28→   328→   328→   328→                                        \<th class="p-3.5 text-center"\>Grade (P / M / G / GG)\</th\>  
+    29→   329→   329→   329→                                        \<th class="p-3.5 text-right"\>Custo / Venda\</th\>  
+    30→   330→   330→   330→                                        \<th class="p-3.5 text-right"\>Lucro Unit.\</th\>  
+    31→   331→   331→   331→                                        \<th class="p-3.5 text-center"\>Ações\</th\>  
+    32→   332→   332→   332→                                    \</tr\>  
+    33→   333→   333→   333→                                \</thead\>  
+    34→   334→   334→   334→                                \<tbody id="productsTableBody" class="divide-y divide-slate-100"\>  
+    35→   335→   335→   335→                                    \<\!-- Dinâmico \--\>  
+    36→   336→   336→   336→                                \</tbody\>  
+    37→   337→   337→   337→                            \</table\>  
+    38→   338→   338→   338→                        \</div\>  
+    39→   339→   339→   339→                    \</div\>  
+    40→   340→   340→   340→                \</section\>
+    41→   341→   341→   341→
+    42→   342→   342→   342→                \<\!-- 3\. ABA ESTOQUE \--\>  
+    43→   343→   343→   343→                \<section id="tab-estoque" class="hidden space-y-4"\>  
+    44→   344→   344→   344→                    \<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3"\>  
+    45→   345→   345→   345→                        \<div class="flex items-center gap-3"\>  
+    46→   346→   346→   346→                            \<span class="text-xs font-medium text-slate-500"\>Filtrar por Status:\</span\>  
+    47→   347→   347→   347→                            \<select id="stockFilterSelect" onchange="renderStockTable()" class="text-xs bg-white border border-slate-200 rounded-xl px-3 py-2 focus:outline-none"\>  
+    48→   348→   348→   348→                                \<option value="all"\>Todos os Itens\</option\>  
+    49→   349→   349→   349→                                \<option value="low"\>Apenas Estoque Baixo / Crítico\</option\>  
+    50→   350→   350→   350→                            \</select\>  
+    51→   351→   351→   351→                        \</div\>  
+    52→   352→   352→   352→                        \<button onclick="exportStockPDF()" class="flex items-center gap-2 bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow-sm transition"\>  
+    53→   353→   353→   353→                            \<i data-lucide="file-down" class="w-4 h-4"\>\</i\> Exportar Inventário PDF  
+    54→   354→   354→   354→                        \</button\>  
+    55→   355→   355→   355→                    \</div\>
+    56→   356→   356→   356→
+    57→   357→   357→   357→                    \<\!-- Tabela de Estoque \--\>  
+    58→   358→   358→   358→                    \<div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden" id="stockTableContainer"\>  
+    59→   359→   359→   359→                        \<div class="overflow-x-auto"\>  
+    60→   360→   360→   360→                            \<table class="w-full text-left text-xs text-slate-600"\>  
+    61→   361→   361→   361→                                \<thead class="bg-slate-50 border-b border-slate-200 text-slate-700 uppercase font-semibold"\>  
+    62→   362→   362→   362→                                    \<tr\>  
+    63→   363→   363→   363→                                        \<th class="p-3.5"\>Foto\</th\>  
+    64→   364→   364→   364→                                        \<th class="p-3.5"\>Produto / Estampa\</th\>  
+    65→   365→   365→   365→                                        \<th class="p-3.5 text-center"\>P\</th\>  
+    66→   366→   366→   366→                                        \<th class="p-3.5 text-center"\>M\</th\>  
+    67→   367→   367→   367→                                        \<th class="p-3.5 text-center"\>G\</th\>  
+    68→   368→   368→   368→                                        \<th class="p-3.5 text-center"\>GG\</th\>  
+    69→   369→   369→   369→                                        \<th class="p-3.5 text-center"\>Total Atual\</th\>  
+    70→   370→   370→   370→                                        \<th class="p-3.5 text-center"\>Estoque Mínimo\</th\>  
+    71→   371→   371→   371→                                        \<th class="p-3.5 text-center"\>Status\</th\>  
+    72→   372→   372→   372→                                        \<th class="p-3.5 text-center"\>Ajuste Rápido\</th\>  
+    73→   373→   373→   373→                                    \</tr\>  
+    74→   374→   374→   374→                                \</thead\>  
+    75→   375→   375→   375→                                \<tbody id="stockTableBody" class="divide-y divide-slate-100"\>  
+    76→   376→   376→   376→                                    \<\!-- Dinâmico \--\>  
+    77→   377→   377→   377→                                \</tbody\>  
+    78→   378→   378→   378→                            \</table\>  
+    79→   379→   379→   379→                        \</div\>  
+    80→   380→   380→   380→                    \</div\>  
+    81→   381→   381→   381→                \</section\>
+    82→   382→   382→   382→
+    83→   383→   383→   383→                \<\!-- 4\. ABA ROMANEIO & VENDAS \--\>  
+    84→   384→   384→   384→                \<section id="tab-romaneio" class="hidden space-y-4"\>  
+    85→   385→   385→   385→                    \<div class="flex justify-between items-center"\>  
+    86→   386→   386→   386→                        \<h2 class="text-sm font-bold text-slate-800"\>Histórico de Romaneios / Pedidos de Venda\</h2\>  
+    87→   387→   387→   387→                        \<button onclick="openRomaneioModal()" class="flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-bold px-4 py-2.5 rounded-xl shadow-sm transition"\>  
+    88→   388→   388→   388→                            \<i data-lucide="plus-circle" class="w-4 h-4"\>\</i\> Criar Novo Romaneio  
+    89→   389→   389→   389→                        \</button\>  
+    90→   390→   390→   390→                    \</div\>
+    91→   391→   391→   391→
+    92→   392→   392→   392→                    \<div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden"\>  
+    93→   393→   393→   393→                        \<div class="overflow-x-auto"\>  
+    94→   394→   394→   394→                            \<table class="w-full text-left text-xs text-slate-600"\>  
+    95→   395→   395→   395→                                \<thead class="bg-slate-50 border-b border-slate-200 text-slate-700 uppercase font-semibold"\>  
+    96→   396→   396→   396→                                    \<tr\>  
+    97→   397→   397→   397→                                        \<th class="p-3.5"\>Nº Romaneio\</th\>  
+    98→   398→   398→   398→                                        \<th class="p-3.5"\>Data\</th\>  
+    99→   399→   399→   399→                                        \<th class="p-3.5"\>Cliente\</th\>  
+   100→   400→   400→   400→                                        \<th class="p-3.5"\>WhatsApp / E-mail\</th\>  
+   101→   401→   401→   401→                                        \<th class="p-3.5"\>Itens Comprados\</th\>  
+   102→   402→   402→   402→                                        \<th class="p-3.5"\>Pagamento\</th\>  
+   103→   403→   403→   403→                                        \<th class="p-3.5 text-right"\>Valor Total\</th\>  
+   104→   404→   404→   404→                                        \<th class="p-3.5 text-center"\>Ações\</th\>  
+   105→   405→   405→   405→                                    \</tr\>  
+   106→   406→   406→   406→                                \</thead\>  
+   107→   407→   407→   407→                                \<tbody id="romaneioTableBody" class="divide-y divide-slate-100"\>  
+   108→   408→   408→   408→                                    \<\!-- Dinâmico \--\>  
+   109→   409→   409→   409→                                \</tbody\>  
+   110→   410→   410→   410→                            \</table\>  
+   111→   411→   411→   411→                        \</div\>  
+   112→   412→   412→   412→                    \</div\>  
+   113→   413→   413→   413→                \</section\>
+   114→   414→   414→   414→
+   115→   415→   415→   415→                \<\!-- 5\. ABA FINANCEIRO \--\>  
+   116→   416→   416→   416→                \<section id="tab-financeiro" class="hidden space-y-6"\>  
+   117→   417→   417→   417→                    \<div class="flex justify-between items-center"\>  
+   118→   418→   418→   418→                        \<h2 class="text-sm font-bold text-slate-800"\>Demonstrativo de Resultados & Fluxo\</h2\>  
+   119→   419→   419→   419→                        \<button onclick="exportFinancePDF()" class="flex items-center gap-2 bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow-sm transition"\>  
+   120→   420→   420→   420→                            \<i data-lucide="file-text" class="w-4 h-4"\>\</i\> Exportar Relatório DRE (PDF)  
+   121→   421→   421→   421→                        \</button\>  
+   122→   422→   422→   422→                    \</div\>
+   123→   423→   423→   423→
+   124→   424→   424→   424→                    \<\!-- Grid DRE Detalhado \--\>  
+   125→   425→   425→   425→                    \<div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="financeSummaryCards"\>  
+   126→   426→   426→   426→                        \<div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm"\>  
+   127→   427→   427→   427→                            \<span class="text-xs font-medium text-slate-500"\>Receita Bruta Acumulada\</span\>  
+   128→   428→   428→   428→                            \<h4 class="text-2xl font-bold text-slate-900 mt-1" id="finGrossSales"\>R$ 0,00\</h4\>  
+   129→   429→   429→   429→                            \<p class="text-\[11px\] text-slate-400 mt-1"\>Total faturado em romaneios\</p\>  
+   130→   430→   430→   430→                        \</div\>  
+   131→   431→   431→   431→                        \<div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm"\>  
+   132→   432→   432→   432→                            \<span class="text-xs font-medium text-slate-500"\>Custo das Mercadorias Vendidas (CMV)\</span\>  
+   133→   433→   433→   433→                            \<h4 class="text-2xl font-bold text-rose-600 mt-1" id="finTotalCost"\>R$ 0,00\</h4\>  
+   134→   434→   434→   434→                            \<p class="text-\[11px\] text-slate-400 mt-1"\>Custo base dos produtos baixados\</p\>  
+   135→   435→   435→   435→                        \</div\>  
+   136→   436→   436→   436→                        \<div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm"\>  
+   137→   437→   437→   437→                            \<span class="text-xs font-medium text-slate-500"\>Lucro Operacional Líquido\</span\>  
+   138→   438→   438→   438→                            \<h4 class="text-2xl font-bold text-emerald-600 mt-1" id="finNetProfit"\>R$ 0,00\</h4\>  
+   139→   439→   439→   439→                            \<p class="text-\[11px\] text-emerald-600 font-semibold mt-1" id="finMarginPercent"\>Margem líquida: 0%\</p\>  
+   140→   440→   440→   440→                        \</div\>  
+   141→   441→   441→   441→                    \</div\>
+   142→   442→   442→   442→
+   143→   443→   443→   443→                    \<\!-- Métricas por Método de Pagamento \--\>  
+   144→   444→   444→   444→                    \<div class="grid grid-cols-1 lg:grid-cols-3 gap-6"\>  
+   145→   445→   445→   445→                        \<div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm col-span-1"\>  
+   146→   446→   446→   446→                            \<h3 class="text-sm font-bold text-slate-800 mb-4"\>Vendas por Forma de Pagamento\</h3\>  
+   147→   447→   447→   447→                            \<div class="h-56 flex items-center justify-center"\>  
+   148→   448→   448→   448→                                \<canvas id="chartPaymentMethods"\>\</canvas\>  
+   149→   449→   449→   449→                            \</div\>  
+   150→   450→   450→   450→                        \</div\>
+   151→   451→   451→   451→
+   152→   452→   452→   452→                        \<div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm col-span-2"\>  
+   153→   453→   453→   453→                            \<h3 class="text-sm font-bold text-slate-800 mb-4"\>Evolução Mensal de Faturamento & Margem\</h3\>  
+   154→   454→   454→   454→                            \<div class="h-56"\>  
+   155→   455→   455→   455→                                \<canvas id="chartMonthlyFinance"\>\</canvas\>  
+   156→   456→   456→   456→                            \</div\>  
+   157→   457→   457→   457→                        \</div\>  
+   158→   458→   458→   458→                    \</div\>  
+   159→   459→   459→   459→                \</section\>
+   160→   460→   460→   460→
+   161→   461→   461→   461→                \<\!-- 6\. ABA CONFIGURAÇÕES & PERSONALIZAÇÃO \--\>  
+   162→   462→   462→   462→                \<section id="tab-configuracoes" class="hidden space-y-6 max-w-2xl"\>  
+   163→   463→   463→   463→                    \<div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-6"\>  
+   164→   464→   464→   464→                        \<h2 class="text-base font-bold text-slate-800 border-b pb-3"\>Identidade Visual da Marca\</h2\>  
+   165→   465→   465→   465→                          
+   166→   466→   466→   466→                        \<div class="flex items-center gap-6"\>  
+   167→   467→   467→   467→                            \<div id="settingsLogoPreview" class="w-20 h-20 rounded-2xl bg-amber-500 flex items-center justify-center overflow-hidden border border-slate-200 shrink-0 shadow-md"\>  
+   168→   468→   468→   468→                                \<i data-lucide="crown" class="w-10 h-10 text-slate-950"\>\</i\>  
+   169→   469→   469→   469→                            \</div\>  
+   170→   470→   470→   470→                            \<div class="space-y-2"\>  
+   171→   471→   471→   471→                                \<label class="block text-xs font-semibold text-slate-700"\>Substituir Logotipo da Empresa\</label\>  
+   172→   472→   472→   472→                                \<input type="file" id="logoUploadInput" accept="image/\*" onchange="handleLogoUpload(event)" class="text-xs text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-amber-500 file:text-slate-950 hover:file:bg-amber-600 cursor-pointer"\>  
+   173→   473→   473→   473→                                \<p class="text-\[11px\] text-slate-400"\>Recomendado: Imagem PNG ou JPG quadrada (500x500px).\</p\>  
+   174→   474→   474→   474→                            \</div\>  
+   175→   475→   475→   475→                        \</div\>
+   176→   476→   476→   476→
+   177→   477→   477→   477→                        \<div class="space-y-4 pt-4 border-t border-slate-100"\>  
+   178→   478→   478→   478→                            \<div\>  
+   179→   479→   479→   479→                                \<label class="block text-xs font-semibold text-slate-700 mb-1"\>Nome do Aplicativo / Loja\</label\>  
+   180→   480→   480→   480→                                \<input type="text" id="configStoreName" value="Louve Movement" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl p-2.5 focus:outline-none focus:border-amber-500"\>  
+   181→   481→   481→   481→                            \</div\>  
+   182→   482→   482→   482→                            \<div\>  
+   183→   483→   483→   483→                                \<label class="block text-xs font-semibold text-slate-700 mb-1"\>Subtítulo / Slogan\</label\>  
+   184→   484→   484→   484→                                \<input type="text" id="configStoreSubtitle" value="Controle Financeiro e de Estoque Louve Movement" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl p-2.5 focus:outline-none focus:border-amber-500"\>  
+   185→   485→   485→   485→                            \</div\>  
+   186→   486→   486→   486→                            \<div\>  
+   187→   487→   487→   487→                                \<label class="block text-xs font-semibold text-slate-700 mb-1"\>Chave PIX Padrão (para Romaneios)\</label\>  
+   188→   488→   488→   488→                                \<input type="text" id="configStorePix" value="financeiro@louvemovement.com" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl p-2.5 focus:outline-none focus:border-amber-500"\>  
+   189→   489→   489→   489→                            \</div\>
+   190→   490→   490→   490→
+   191→   491→   491→   491→                            \<button onclick="saveStoreSettings()" class="bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-bold px-5 py-2.5 rounded-xl shadow-md transition"\>  
+   192→   492→   492→   492→                                Salvar Alterações  
+   193→   493→   493→   493→                            \</button\>  
+   194→   494→   494→   494→                        \</div\>  
+   195→   495→   495→   495→                    \</div\>  
+   196→   496→   496→   496→                \</section\>  
+   197→   497→   497→   497→            \</div\>  
+   198→   498→   498→   498→        \</main\>  
+   199→   499→   499→   499→    \</div\>
+   200→   500→   500→   500→
+   201→   501→   501→   501→    \<\!-- \==================== MODAL DE CADASTRO / EDIÇÃO DE PRODUTO \==================== \--\>  
+   202→   502→   502→   502→    \<div id="productModal" class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm hidden items-center justify-center p-4"\>  
+   203→   503→   503→   503→        \<div class="bg-white rounded-3xl w-full max-w-2xl max-h-\[90vh\] overflow-y-auto custom-scrollbar border border-slate-200 shadow-2xl p-6"\>  
+   204→   504→   504→   504→            \<div class="flex justify-between items-center pb-4 border-b border-slate-100"\>  
+   205→   505→   505→   505→                \<h3 class="font-bold text-base text-slate-800" id="productModalTitle"\>Cadastrar Nova Camisa\</h3\>  
+   206→   506→   506→   506→                \<button onclick="closeProductModal()" class="text-slate-400 hover:text-slate-600"\>\<i data-lucide="x" class="w-5 h-5"\>\</i\>\</button\>  
+   207→   507→   507→   507→            \</div\>
+   208→   508→   508→   508→
+   209→   509→   509→   509→            \<form id="productForm" class="mt-4 space-y-4" onsubmit="event.preventDefault(); saveProduct();"\>  
+   210→   510→   510→   510→                \<input type="hidden" id="prodId"\>  
+   211→   511→   511→   511→                  
+   212→   512→   512→   512→                \<div class="grid grid-cols-1 sm:grid-cols-3 gap-4"\>  
+   213→   513→   513→   513→                    \<\!-- Upload Imagem \--\>  
+   214→   514→   514→   514→                    \<div class="sm:col-span-1 flex flex-col items-center justify-center border-2 border-dashed border-slate-200 rounded-2xl p-4 bg-slate-50 text-center"\>  
+   215→   515→   515→   515→                        \<img id="prodImagePreview" src="https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=300\&auto=format\&fit=crop\&q=60" alt="Preview" class="w-24 h-24 object-cover rounded-xl mb-2 shadow-sm"\>  
+   216→   516→   516→   516→                        \<label class="cursor-pointer text-\[11px\] font-bold text-amber-600 hover:underline"\>  
+   217→   517→   517→   517→                            Carregar Foto  
+   218→   518→   518→   518→                            \<input type="file" id="prodImageInput" accept="image/\*" onchange="previewImage(event, 'prodImagePreview')" class="hidden"\>  
+   219→   519→   519→   519→                        \</label\>  
+   220→   520→   520→   520→                    \</div\>
+   221→   521→   521→   521→
+   222→   522→   522→   522→                    \<div class="sm:col-span-2 space-y-3"\>  
+   223→   523→   523→   523→                        \<div class="grid grid-cols-2 gap-3"\>  
+   224→   524→   524→   524→                            \<div\>  
+   225→   525→   525→   525→                                \<label class="block text-xs font-semibold text-slate-700 mb-1"\>Código SKU\</label\>  
+   226→   526→   526→   526→                                \<input type="text" id="prodCode" required placeholder="LM-001" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl p-2.5 focus:outline-none focus:border-amber-500 font-mono"\>  
+   227→   527→   527→   527→                            \</div\>  
+   228→   528→   528→   528→                            \<div\>  
+   229→   529→   529→   529→                                \<label class="block text-xs font-semibold text-slate-700 mb-1"\>Nome do Produto\</label\>  
+   230→   530→   530→   530→                                \<input type="text" id="prodName" required placeholder="Camisa Streetwear Fé" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl p-2.5 focus:outline-none focus:border-amber-500"\>  
+   231→   531→   531→   531→                            \</div\>  
+   232→   532→   532→   532→                        \</div\>
+   233→   533→   533→   533→
+   234→   534→   534→   534→                        \<div class="grid grid-cols-2 gap-3"\>  
+   235→   535→   535→   535→                            \<div\>  
+   236→   536→   536→   536→                                \<label class="block text-xs font-semibold text-slate-700 mb-1"\>Estampa\</label\>  
+   237→   537→   537→   537→                                \<input type="text" id="prodPrint" required placeholder="Ex: Cruz Frontal Minimalista" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl p-2.5 focus:outline-none focus:border-amber-500"\>  
+   238→   538→   538→   538→                            \</div\>  
+   239→   539→   539→   539→                            \<div\>  
+   240→   540→   540→   540→                                \<label class="block text-xs font-semibold text-slate-700 mb-1"\>Cor\</label\>  
+   241→   541→   541→   541→                                \<input type="text" id="prodColor" required placeholder="Ex: Preto / Off-White" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl p-2.5 focus:outline-none focus:border-amber-500"\>  
+   242→   542→   542→   542→                            \</div\>  
+   243→   543→   543→   543→                        \</div\>  
+   244→   544→   544→   544→                    \</div\>  
+   245→   545→   545→   545→                \</div\>
+   246→   546→   546→   546→
+   247→   547→   547→   547→                \<\!-- Estoque por Grade \--\>  
+   248→   548→   548→   548→                \<div class="bg-amber-50/50 p-4 rounded-2xl border border-amber-100 space-y-2"\>  
+   249→   549→   549→   549→                    \<span class="text-xs font-bold text-amber-900 block"\>Grade de Estoque Inicial por Tamanho:\</span\>  
+   250→   550→   550→   550→                    \<div class="grid grid-cols-4 gap-3"\>  
+   251→   551→   551→   551→                        \<div\>  
+   252→   552→   552→   552→                            \<label class="block text-center text-\[11px\] font-bold text-slate-600 mb-1"\>Tam. P\</label\>  
+   253→   553→   553→   553→                            \<input type="number" id="prodStockP" min="0" value="0" class="w-full text-center text-xs bg-white border border-amber-200 rounded-xl p-2 focus:outline-none"\>  
+   254→   554→   554→   554→                        \</div\>  
+   255→   555→   555→   555→                        \<div\>  
+   256→   556→   556→   556→                            \<label class="block text-center text-\[11px\] font-bold text-slate-600 mb-1"\>Tam. M\</label\>  
+   257→   557→   557→   557→                            \<input type="number" id="prodStockM" min="0" value="0" class="w-full text-center text-xs bg-white border border-amber-200 rounded-xl p-2 focus:outline-none"\>  
+   258→   558→   558→   558→                        \</div\>  
+   259→   559→   559→   559→                        \<div\>  
+   260→   560→   560→   560→                            \<label class="block text-center text-\[11px\] font-bold text-slate-600 mb-1"\>Tam. G\</label\>  
+   261→   561→   561→   561→                            \<input type="number" id="prodStockG" min="0" value="0" class="w-full text-center text-xs bg-white border border-amber-200 rounded-xl p-2 focus:outline-none"\>  
+   262→   562→   562→   562→                        \</div\>  
+   263→   563→   563→   563→                        \<div\>  
+   264→   564→   564→   564→                            \<label class="block text-center text-\[11px\] font-bold text-slate-600 mb-1"\>Tam. GG\</label\>  
+   265→   565→   565→   565→                            \<input type="number" id="prodStockGG" min="0" value="0" class="w-full text-center text-xs bg-white border border-amber-200 rounded-xl p-2 focus:outline-none"\>  
+   266→   566→   566→   566→                        \</div\>  
+   267→   567→   567→   567→                    \</div\>  
+   268→   568→   568→   568→                    \<div class="pt-2"\>  
+   269→   569→   569→   569→                        \<label class="block text-xs font-semibold text-slate-700 mb-1"\>Estoque Mínimo de Alerta Geral deste Modelo:\</label\>  
+   270→   570→   570→   570→                        \<input type="number" id="prodMinStock" min="1" value="5" class="w-32 text-xs bg-white border border-slate-200 rounded-xl p-2 focus:outline-none"\>  
+   271→   571→   571→   571→                    \</div\>  
+   272→   572→   572→   572→                \</div\>
+   273→   573→   573→   573→
+   274→   574→   574→   574→                \<\!-- Preços e Lucro Inteligente \--\>  
+   275→   575→   575→   575→                \<div class="grid grid-cols-1 sm:grid-cols-4 gap-3 bg-slate-50 p-4 rounded-2xl border border-slate-100"\>  
+   276→   576→   576→   576→                    \<div\>  
+   277→   577→   577→   577→                        \<label class="block text-\[11px\] font-semibold text-slate-600 mb-1"\>Valor de Custo (R$)\</label\>  
+   278→   578→   578→   578→                        \<input type="number" step="0.01" id="prodCost" oninput="calcProfitPreview()" required placeholder="35.00" class="w-full text-xs bg-white border border-slate-200 rounded-xl p-2.5 focus:outline-none"\>  
+   279→   579→   579→   579→                    \</div\>  
+   280→   580→   580→   580→                    \<div\>  
+   281→   581→   581→   581→                        \<label class="block text-\[11px\] font-semibold text-slate-600 mb-1"\>Valor de Venda (R$)\</label\>  
+   282→   582→   582→   582→                        \<input type="number" step="0.01" id="prodPrice" oninput="calcProfitPreview()" required placeholder="89.90" class="w-full text-xs bg-white border border-slate-200 rounded-xl p-2.5 focus:outline-none"\>  
+   283→   583→   583→   583→                    \</div\>  
+   284→   584→   584→   584→                    \<div\>  
+   285→   585→   585→   585→                        \<label class="block text-\[11px\] font-semibold text-slate-600 mb-1"\>Lucro Unitário\</label\>  
+   286→   586→   586→   586→                        \<div id="previewProfitVal" class="text-xs font-bold text-emerald-600 p-2.5 bg-emerald-50 rounded-xl border border-emerald-100"\>R$ 0,00\</div\>  
+   287→   587→   587→   587→                    \</div\>  
+   288→   588→   588→   588→                    \<div\>  
+   289→   589→   589→   589→                        \<label class="block text-\[11px\] font-semibold text-slate-600 mb-1"\>Margem de Lucro\</label\>  
+   290→   590→   590→   590→                        \<div id="previewProfitMargin" class="text-xs font-bold text-emerald-600 p-2.5 bg-emerald-50 rounded-xl border border-emerald-100"\>0%\</div\>  
+   291→   591→   591→   591→                    \</div\>  
+   292→   592→   592→   592→                \</div\>
+   293→   593→   593→   593→
+   294→   594→   594→   594→                \<div class="flex justify-end gap-2 pt-3"\>  
+   295→   595→   595→   595→                    \<button type="button" onclick="closeProductModal()" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl"\>Cancelar\</button\>  
+   296→   596→   596→   596→                    \<button type="submit" class="px-6 py-2.5 bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-bold rounded-xl shadow-md"\>Salvar Produto\</button\>  
+   297→   597→   597→   597→                \</div\>  
+   298→   598→   598→   598→            \</form\>  
+   299→   599→   599→   599→        \</div\>  
+   300→   600→   600→   600→    \</div\>
+   301→   601→   601→   601→
+   302→   602→   602→   602→    \<\!-- \==================== MODAL DE CRIAÇÃO DE ROMANEIO (NOVA VENDA / PDV) \==================== \--\>  
+   303→   603→   603→   603→    \<div id="romaneioModal" class="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-sm hidden items-center justify-center p-4"\>  
+   304→   604→   604→   604→        \<div class="bg-white rounded-3xl w-full max-w-4xl max-h-\[95vh\] overflow-y-auto custom-scrollbar border border-slate-200 shadow-2xl p-6 flex flex-col"\>  
+   305→   605→   605→   605→            \<div class="flex justify-between items-center pb-4 border-b border-slate-100"\>  
+   306→   606→   606→   606→                \<div class="flex items-center gap-3"\>  
+   307→   607→   607→   607→                    \<div class="w-9 h-9 rounded-xl bg-amber-500 flex items-center justify-center text-slate-950 font-bold"\>  
+   308→   608→   608→   608→                        \<i data-lucide="receipt" class="w-5 h-5"\>\</i\>  
+   309→   609→   609→   609→                    \</div\>  
+   310→   610→   610→   610→                    \<div\>  
+   311→   611→   611→   611→                        \<h3 class="font-bold text-base text-slate-800"\>Novo Romaneio de Venda\</h3\>  
+   312→   612→   612→   612→                        \<p class="text-\[11px\] text-slate-400"\>Emissão com baixa de estoque automática e recibo\</p\>  
+   313→   613→   613→   613→                    \</div\>  
+   314→   614→   614→   614→                \</div\>  
+   315→   615→   615→   615→                \<button onclick="closeRomaneioModal()" class="text-slate-400 hover:text-slate-600"\>\<i data-lucide="x" class="w-5 h-5"\>\</i\>\</button\>  
+   316→   616→   616→   616→            \</div\>
+   317→   617→   617→   617→
+   318→   618→   618→   618→            \<div class="mt-4 grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1"\>  
+   319→   619→   619→   619→                \<\!-- Coluna Esquerda: Dados do Cliente & Pagamento \--\>  
+   320→   620→   620→   620→                \<div class="space-y-4 lg:col-span-1"\>  
+   321→   621→   621→   621→                    \<h4 class="text-xs font-bold text-slate-700 uppercase tracking-wide"\>1. Dados do Cliente\</h4\>  
+   322→   622→   622→   622→                      
+   323→   623→   623→   623→                    \<div\>  
+   324→   624→   624→   624→                        \<label class="block text-xs font-semibold text-slate-700 mb-1"\>Nome Completo\</label\>  
+   325→   625→   625→   625→                        \<input type="text" id="romClientName" placeholder="Ex: Lucas Gabriel" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl p-2.5 focus:outline-none focus:border-amber-500"\>  
+   326→   626→   626→   626→                    \</div\>  
+   327→   627→   627→   627→                    \<div\>  
+   328→   628→   628→   628→                        \<label class="block text-xs font-semibold text-slate-700 mb-1"\>WhatsApp\</label\>  
+   329→   629→   629→   629→                        \<input type="text" id="romClientPhone" placeholder="(11) 99999-9999" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl p-2.5 focus:outline-none focus:border-amber-500"\>  
+   330→   630→   630→   630→                    \</div\>  
+   331→   631→   631→   631→                    \<div\>  
+   332→   632→   632→   632→                        \<label class="block text-xs font-semibold text-slate-700 mb-1"\>E-mail\</label\>  
+   333→   633→   633→   633→                        \<input type="email" id="romClientEmail" placeholder="cliente@email.com" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl p-2.5 focus:outline-none focus:border-amber-500"\>  
+   334→   634→   634→   634→                    \</div\>
+   335→   635→   635→   635→
+   336→   636→   636→   636→                    \<h4 class="text-xs font-bold text-slate-700 uppercase tracking-wide pt-2"\>2. Pagamento\</h4\>  
+   337→   637→   637→   637→                    \<div\>  
+   338→   638→   638→   638→                        \<label class="block text-xs font-semibold text-slate-700 mb-1"\>Forma de Pagamento\</label\>  
+   339→   639→   639→   639→                        \<select id="romPaymentMethod" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl p-2.5 focus:outline-none"\>  
+   340→   640→   640→   640→                            \<option value="PIX"\>PIX (Instantâneo)\</option\>  
+   341→   641→   641→   641→                            \<option value="Cartão de Crédito"\>Cartão de Crédito\</option\>  
+   342→   642→   642→   642→                            \<option value="Cartão de Débito"\>Cartão de Débito\</option\>  
+   343→   643→   643→   643→                            \<option value="Dinheiro"\>Dinheiro\</option\>  
+   344→   644→   644→   644→                        \</select\>  
+   345→   645→   645→   645→                    \</div\>  
+   346→   646→   646→   646→                    \<div\>  
+   347→   647→   647→   647→                        \<label class="block text-xs font-semibold text-slate-700 mb-1"\>Data da Venda\</label\>  
+   348→   648→   648→   648→                        \<input type="date" id="romDate" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl p-2.5 focus:outline-none"\>  
+   349→   649→   649→   649→                    \</div\>  
+   350→   650→   650→   650→                \</div\>
+   351→   651→   651→   651→
+   352→   652→   652→   652→                \<\!-- Coluna Direita: Seleção de Peças e Carrinho \--\>  
+   353→   653→   653→   653→                \<div class="space-y-4 lg:col-span-2 flex flex-col justify-between"\>  
+   354→   654→   654→   654→                    \<div\>  
+   355→   655→   655→   655→                        \<h4 class="text-xs font-bold text-slate-700 uppercase tracking-wide"\>3. Adicionar Camisas ao Romaneio\</h4\>  
+   356→   656→   656→   656→                          
+   357→   657→   657→   657→                        \<\!-- Seletor de Camisas \--\>  
+   358→   658→   658→   658→                        \<div class="mt-2 grid grid-cols-1 sm:grid-cols-12 gap-2 bg-slate-50 p-3 rounded-2xl border border-slate-200 items-end"\>  
+   359→   659→   659→   659→                            \<div class="sm:col-span-6"\>  
+   360→   660→   660→   660→                                \<label class="block text-\[11px\] font-semibold text-slate-600 mb-1"\>Selecione o Modelo\</label\>  
+   361→   661→   661→   661→                                \<select id="romProductSelect" onchange="updateRomaneioSizeOptions()" class="w-full text-xs bg-white border border-slate-200 rounded-xl p-2 focus:outline-none"\>  
+   362→   662→   662→   662→                                    \<\!-- Opções dinâmicas \--\>  
+   363→   663→   663→   663→                                \</select\>  
+   364→   664→   664→   664→                            \</div\>  
+   365→   665→   665→   665→                            \<div class="sm:col-span-3"\>  
+   366→   666→   666→   666→                                \<label class="block text-\[11px\] font-semibold text-slate-600 mb-1"\>Tamanho\</label\>  
+   367→   667→   667→   667→                                \<select id="romSizeSelect" class="w-full text-xs bg-white border border-slate-200 rounded-xl p-2 focus:outline-none"\>  
+   368→   668→   668→   668→                                    \<option value="P"\>P\</option\>  
+   369→   669→   669→   669→                                    \<option value="M"\>M\</option\>  
+   370→   670→   670→   670→                                    \<option value="G"\>G\</option\>  
+   371→   671→   671→   671→                                    \<option value="GG"\>GG\</option\>  
+   372→   672→   672→   672→                                \</select\>  
+   373→   673→   673→   673→                            \</div\>  
+   374→   674→   674→   674→                            \<div class="sm:col-span-3"\>  
+   375→   675→   675→   675→                                \<button type="button" onclick="addItemToRomaneioCart()" class="w-full bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold py-2 rounded-xl transition"\>  
+   376→   676→   676→   676→                                    \+ Adicionar  
+   377→   677→   677→   677→                                \</button\>  
+   378→   678→   678→   678→                            \</div\>  
+   379→   679→   679→   679→                        \</div\>
+   380→   680→   680→   680→
+   381→   681→   681→   681→                        \<\!-- Lista de Itens no Romaneio Atual \--\>  
+   382→   682→   682→   682→                        \<div class="mt-4 border border-slate-200 rounded-2xl overflow-hidden"\>  
+   383→   683→   683→   683→                            \<div class="bg-slate-100 p-2.5 text-xs font-bold text-slate-700"\>Itens do Romaneio\</div\>  
+   384→   684→   684→   684→                            \<div class="max-h-48 overflow-y-auto divide-y divide-slate-100" id="romCartItemsList"\>  
+   385→   685→   685→   685→                                \<p class="p-4 text-center text-xs text-slate-400"\>Nenhum item adicionado ainda.\</p\>  
+   386→   686→   686→   686→                            \</div\>  
+   387→   687→   687→   687→                        \</div\>  
+   388→   688→   688→   688→                    \</div\>
+   389→   689→   689→   689→
+   390→   690→   690→   690→                    \<\!-- Resumo Financeiro da Venda \--\>  
+   391→   691→   691→   691→                    \<div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-center justify-between mt-4"\>  
+   392→   692→   692→   692→                        \<div\>  
+   393→   693→   693→   693→                            \<span class="text-xs text-amber-900 font-medium"\>Total do Romaneio:\</span\>  
+   394→   694→   694→   694→                            \<h3 class="text-2xl font-extrabold text-slate-900" id="romCartTotal"\>R$ 0,00\</h3\>  
+   395→   695→   695→   695→                        \</div\>  
+   396→   696→   696→   696→                        \<button onclick="finalizeRomaneio()" class="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs px-6 py-3 rounded-xl shadow-lg shadow-amber-500/20 transition"\>  
+   397→   697→   697→   697→                            Finalizar e Baixar Estoque  
+   398→   698→   698→   698→                        \</button\>  
+   399→   699→   699→   699→                    \</div\>  
+   400→   700→   700→   700→                \</div\>  
+   401→   701→   701→   701→            \</div\>  
+   402→   702→   702→   702→        \</div\>  
+   403→   703→   703→   703→    \</div\>
+   404→   704→   704→   704→
+   405→   705→   705→   705→    \<\!-- \==================== CONTAINER ESCONDIDO PARA GERAÇÃO DO RECIBO / ROMANEIO PDF \==================== \--\>  
+   406→   706→   706→   706→    \<div id="pdfExportContainer" class="hidden p-8 bg-white text-slate-900 max-w-2xl mx-auto"\>  
+   407→   707→   707→   707→        \<\!-- Renderizado dinamicamente para exportar PDF \--\>  
+   408→   708→   708→   708→    \</div\>
+   409→   709→   709→   709→
+   410→   710→   710→   710→    \<\!-- \==================== LÓGICA JAVASCRIPT COMPLETA \==================== \--\>  
+   411→   711→   711→   711→    \<script\>  
+   412→   712→   712→   712→        // \--- ESTADO GLOBAL DA APLICAÇÃO \---  
+   413→   713→   713→   713→        const APP\_STATE \= {  
+   414→   714→   714→   714→            brandName: "Louve Movement",  
+   415→   715→   715→   715→            brandSubtitle: "Controle Financeiro e de Estoque Louve Movement",  
+   416→   716→   716→   716→            brandLogo: null, // Base64 se customizado  
+   417→   717→   717→   717→            pixKey: "financeiro@louvemovement.com",  
+   418→   718→   718→   718→            products: \[\],  
+   419→   719→   719→   719→            sales: \[\],  
+   420→   720→   720→   720→            currentCart: \[\]  
+   421→   721→   721→   721→        };
+   422→   722→   722→   722→
+   423→   723→   723→   723→        // Carregar dados iniciais de demonstração se não existirem no localStorage  
+   424→   724→   724→   724→        function initAppStorage() {  
+   425→   725→   725→   725→            const savedState \= localStorage.getItem('LOUVE\_MOVEMENT\_DATA');  
+   426→   726→   726→   726→            if (savedState) {  
+   427→   727→   727→   727→                const parsed \= JSON.parse(savedState);  
+   428→   728→   728→   728→                Object.assign(APP\_STATE, parsed);  
+   429→   729→   729→   729→            } else {  
+   430→   730→   730→   730→                // Produtos semente com tema Louve Movement  
+   431→   731→   731→   731→                APP\_STATE.products \= \[  
+   432→   732→   732→   732→                    {  
+   433→   733→   733→   733→                        id: "prod\_1",  
+   434→   734→   734→   734→                        code: "LM-ST-01",  
+   435→   735→   735→   735→                        name: "Camisa Oversized Lion of Judah",  
+   436→   736→   736→   736→                        print: "Leão de Judá Floral Costas",  
+   437→   737→   737→   737→                        color: "Preto Mineral",  
+   438→   738→   738→   738→                        cost: 38.00,  
+   439→   739→   739→   739→                        price: 99.90,  
+   440→   740→   740→   740→                        minStock: 6,  
+   441→   741→   741→   741→                        sizes: { P: 5, M: 8, G: 12, GG: 4 },  
+   442→   742→   742→   742→                        image: "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=300\&auto=format\&fit=crop\&q=60"  
+   443→   743→   743→   743→                    },  
+   444→   744→   744→   744→                    {  
+   445→   745→   745→   745→                        id: "prod\_2",  
+   446→   746→   746→   746→                        code: "LM-ST-02",  
+   447→   747→   747→   747→                        name: "Camisa Minimalist Grace",  
+   448→   748→   748→   748→                        print: "Graça Sobre Graça Peito",  
+   449→   749→   749→   749→                        color: "Off-White / Bege",  
+   450→   750→   750→   750→                        cost: 34.00,  
+   451→   751→   751→   751→                        price: 89.90,  
+   452→   752→   752→   752→                        minStock: 5,  
+   453→   753→   753→   753→                        sizes: { P: 2, M: 4, G: 3, GG: 1 },  
+   454→   754→   754→   754→                        image: "https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?w=300\&auto=format\&fit=crop\&q=60"  
+   455→   755→   755→   755→                    }  
+   456→   756→   756→   756→                \];  
+   457→   757→   757→   757→                APP\_STATE.sales \= \[\];  
+   458→   758→   758→   758→                saveToLocalStorage();  
+   459→   759→   759→   759→            }  
+   460→   760→   760→   760→        }
+   461→   761→   761→   761→
+   462→   762→   762→   762→        function saveToLocalStorage() {  
+   463→   763→   763→   763→            localStorage.setItem('LOUVE\_MOVEMENT\_DATA', JSON.stringify(APP\_STATE));  
+   464→   764→   764→   764→        }
+   465→   765→   765→   765→
+   466→   766→   766→   766→        // \--- SISTEMA DE AUTENTICAÇÃO \---  
+   467→   767→   767→   767→        function handleLogin() {  
+   468→   768→   768→   768→            document.getElementById('authScreen').classList.add('hidden');  
+   469→   769→   769→   769→            document.getElementById('appContainer').classList.remove('hidden');  
+   470→   770→   770→   770→            refreshAllViews();  
+   471→   771→   771→   771→        }
+   472→   772→   772→   772→
+   473→   773→   773→   773→        function handleLoginGoogle() {  
+   474→   774→   774→   774→            alert('Autenticado com sucesso via Conta Google\!');  
+   475→   775→   775→   775→            handleLogin();  
+   476→   776→   776→   776→        }
+   477→   777→   777→   777→
+   478→   778→   778→   778→        function handleLogout() {  
+   479→   779→   779→   779→            document.getElementById('authScreen').classList.remove('hidden');  
+   480→   780→   780→   780→            document.getElementById('appContainer').classList.add('hidden');  
+   481→   781→   781→   781→        }
+   482→   782→   782→   782→
+   483→   783→   783→   783→        // \--- NAVEGAÇÃO ENTRE ABAS \---  
+   484→   784→   784→   784→        function switchTab(tabId) {  
+   485→   785→   785→   785→            document.querySelectorAll('\#tabContainer \> section').forEach(sec \=\> sec.classList.add('hidden'));  
+   486→   786→   786→   786→            document.querySelectorAll('.nav-item').forEach(btn \=\> {  
+   487→   787→   787→   787→                btn.classList.remove('bg-slate-800/80', 'text-amber-400');  
+   488→   788→   788→   788→                btn.classList.add('text-slate-300');  
+   489→   789→   789→   789→            });
+   490→   790→   790→   790→
+   491→   791→   791→   791→            const activeSection \= document.getElementById('tab-' \+ tabId);  
+   492→   792→   792→   792→            if (activeSection) activeSection.classList.remove('hidden');
+   493→   793→   793→   793→
+   494→   794→   794→   794→            const activeBtn \= document.querySelector(\`.nav-item\[data-tab="${tabId}"\]\`);  
+   495→   795→   795→   795→            if (activeBtn) {  
+   496→   796→   796→   796→                activeBtn.classList.add('bg-slate-800/80', 'text-amber-400');  
+   497→   797→   797→   797→                activeBtn.classList.remove('text-slate-300');  
+   498→   798→   798→   798→            }
+   499→   799→   799→   799→
+   500→   800→   800→   800→            // Títulos  
+
+[showing lines 1-500 of 502; use offset=501 with limit to continue reading]

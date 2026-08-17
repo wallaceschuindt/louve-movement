@@ -152,13 +152,13 @@ function buildWhatsAppSummary(sale: SaleRecord | OtherSaleRecord, isOther: boole
   lines.push('*Itens:*');
   if (!isOther) {
     const s = sale as SaleRecord;
-    s.items.forEach(function (i) {
-      lines.push('- ' + i.name + ' - ' + i.print + ' (' + i.color + ') | Tam. ' + i.size + ' | Qtd: ' + i.qty + ' | R$ ' + (i.price * i.qty).toFixed(2));
+    s.items.forEach((i) => {
+      lines.push('• ' + i.name + ' - ' + i.print + ' (' + i.color + ') | Tam. ' + i.size + ' | Qtd: ' + i.qty + ' | R$ ' + (i.price * i.qty).toFixed(2));
     });
   } else {
     const s = sale as OtherSaleRecord;
-    s.items.forEach(function (i) {
-      lines.push('- ' + i.name + ' - ' + i.category + ' | Qtd: ' + i.qty + ' | R$ ' + (i.price * i.qty).toFixed(2));
+    s.items.forEach((i) => {
+      lines.push('• ' + i.name + ' - ' + i.category + ' | Qtd: ' + i.qty + ' | R$ ' + (i.price * i.qty).toFixed(2));
     });
   }
   lines.push('');
@@ -183,7 +183,9 @@ export async function sharePDFWhatsApp(
   const phone = sale.client.phone.replace(/\D/g, '');
   const summaryMsg = buildWhatsAppSummary(sale, isOther);
 
-  // Celular: abre WhatsApp ja com o PDF anexado
+  // Caminho ideal: dispositivos (principalmente celular) cujo navegador
+  // suporta compartilhar arquivos de verdade abrem direto o app do WhatsApp
+  // ja com o PDF bonito anexado, pronto para enviar.
   if (navigator.share && navigator.canShare) {
     const file = new File([blob], filename, { type: 'application/pdf' });
     const shareData = {
@@ -201,13 +203,16 @@ export async function sharePDFWhatsApp(
     }
   }
 
-  // Desktop: baixa o PDF e abre WhatsApp com texto completo formatado
+  // Fallback (principalmente navegadores de computador, que ainda nao
+  // permitem que um site anexe um arquivo automaticamente ao WhatsApp Web):
+  // baixamos o PDF de verdade e abrimos o WhatsApp com o romaneio completo
+  // em texto, para o usuario so precisar arrastar o PDF ja baixado.
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
   a.download = filename;
   a.click();
-  setTimeout(function () { URL.revokeObjectURL(url); }, 10000);
+  setTimeout(() => URL.revokeObjectURL(url), 10000);
 
   const waMsg = summaryMsg + '\n\n_O PDF (' + filename + ') foi baixado no seu computador. Anexe o arquivo aqui antes de enviar._';
   const waUrl = phone

@@ -1,0 +1,502 @@
+   300→                    \</div\>  
+   301→                \</section\>
+   302→
+   303→                \<\!-- 2\. ABA PRODUTOS \--\>  
+   304→                \<section id="tab-produtos" class="hidden space-y-4"\>  
+   305→                    \<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3"\>  
+   306→                        \<div class="flex items-center gap-2"\>  
+   307→                            \<input type="text" id="searchProductInput" oninput="renderProductsTable()" placeholder="Buscar por nome, estampa, cor ou código..." class="text-xs bg-white border border-slate-200 rounded-xl px-4 py-2.5 w-72 focus:outline-none focus:border-amber-500 shadow-sm"\>  
+   308→                        \</div\>  
+   309→                        \<div class="flex items-center gap-2"\>  
+   310→                            \<button onclick="exportProductsPDF()" class="flex items-center gap-2 bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow-sm transition"\>  
+   311→                                \<i data-lucide="file-text" class="w-4 h-4"\>\</i\> Exportar Catálogo PDF  
+   312→                            \</button\>  
+   313→                            \<button onclick="openProductModal()" class="flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-bold px-4 py-2.5 rounded-xl shadow-sm transition"\>  
+   314→                                \<i data-lucide="plus" class="w-4 h-4"\>\</i\> Cadastrar Camisa  
+   315→                            \</button\>  
+   316→                        \</div\>  
+   317→                    \</div\>
+   318→
+   319→                    \<\!-- Tabela de Produtos \--\>  
+   320→                    \<div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden" id="productsTableContainer"\>  
+   321→                        \<div class="overflow-x-auto"\>  
+   322→                            \<table class="w-full text-left text-xs text-slate-600"\>  
+   323→                                \<thead class="bg-slate-50 border-b border-slate-200 text-slate-700 uppercase font-semibold"\>  
+   324→                                    \<tr\>  
+   325→                                        \<th class="p-3.5"\>Foto\</th\>  
+   326→                                        \<th class="p-3.5"\>Código / Nome\</th\>  
+   327→                                        \<th class="p-3.5"\>Estampa & Cor\</th\>  
+   328→                                        \<th class="p-3.5 text-center"\>Grade (P / M / G / GG)\</th\>  
+   329→                                        \<th class="p-3.5 text-right"\>Custo / Venda\</th\>  
+   330→                                        \<th class="p-3.5 text-right"\>Lucro Unit.\</th\>  
+   331→                                        \<th class="p-3.5 text-center"\>Ações\</th\>  
+   332→                                    \</tr\>  
+   333→                                \</thead\>  
+   334→                                \<tbody id="productsTableBody" class="divide-y divide-slate-100"\>  
+   335→                                    \<\!-- Dinâmico \--\>  
+   336→                                \</tbody\>  
+   337→                            \</table\>  
+   338→                        \</div\>  
+   339→                    \</div\>  
+   340→                \</section\>
+   341→
+   342→                \<\!-- 3\. ABA ESTOQUE \--\>  
+   343→                \<section id="tab-estoque" class="hidden space-y-4"\>  
+   344→                    \<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3"\>  
+   345→                        \<div class="flex items-center gap-3"\>  
+   346→                            \<span class="text-xs font-medium text-slate-500"\>Filtrar por Status:\</span\>  
+   347→                            \<select id="stockFilterSelect" onchange="renderStockTable()" class="text-xs bg-white border border-slate-200 rounded-xl px-3 py-2 focus:outline-none"\>  
+   348→                                \<option value="all"\>Todos os Itens\</option\>  
+   349→                                \<option value="low"\>Apenas Estoque Baixo / Crítico\</option\>  
+   350→                            \</select\>  
+   351→                        \</div\>  
+   352→                        \<button onclick="exportStockPDF()" class="flex items-center gap-2 bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow-sm transition"\>  
+   353→                            \<i data-lucide="file-down" class="w-4 h-4"\>\</i\> Exportar Inventário PDF  
+   354→                        \</button\>  
+   355→                    \</div\>
+   356→
+   357→                    \<\!-- Tabela de Estoque \--\>  
+   358→                    \<div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden" id="stockTableContainer"\>  
+   359→                        \<div class="overflow-x-auto"\>  
+   360→                            \<table class="w-full text-left text-xs text-slate-600"\>  
+   361→                                \<thead class="bg-slate-50 border-b border-slate-200 text-slate-700 uppercase font-semibold"\>  
+   362→                                    \<tr\>  
+   363→                                        \<th class="p-3.5"\>Foto\</th\>  
+   364→                                        \<th class="p-3.5"\>Produto / Estampa\</th\>  
+   365→                                        \<th class="p-3.5 text-center"\>P\</th\>  
+   366→                                        \<th class="p-3.5 text-center"\>M\</th\>  
+   367→                                        \<th class="p-3.5 text-center"\>G\</th\>  
+   368→                                        \<th class="p-3.5 text-center"\>GG\</th\>  
+   369→                                        \<th class="p-3.5 text-center"\>Total Atual\</th\>  
+   370→                                        \<th class="p-3.5 text-center"\>Estoque Mínimo\</th\>  
+   371→                                        \<th class="p-3.5 text-center"\>Status\</th\>  
+   372→                                        \<th class="p-3.5 text-center"\>Ajuste Rápido\</th\>  
+   373→                                    \</tr\>  
+   374→                                \</thead\>  
+   375→                                \<tbody id="stockTableBody" class="divide-y divide-slate-100"\>  
+   376→                                    \<\!-- Dinâmico \--\>  
+   377→                                \</tbody\>  
+   378→                            \</table\>  
+   379→                        \</div\>  
+   380→                    \</div\>  
+   381→                \</section\>
+   382→
+   383→                \<\!-- 4\. ABA ROMANEIO & VENDAS \--\>  
+   384→                \<section id="tab-romaneio" class="hidden space-y-4"\>  
+   385→                    \<div class="flex justify-between items-center"\>  
+   386→                        \<h2 class="text-sm font-bold text-slate-800"\>Histórico de Romaneios / Pedidos de Venda\</h2\>  
+   387→                        \<button onclick="openRomaneioModal()" class="flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-bold px-4 py-2.5 rounded-xl shadow-sm transition"\>  
+   388→                            \<i data-lucide="plus-circle" class="w-4 h-4"\>\</i\> Criar Novo Romaneio  
+   389→                        \</button\>  
+   390→                    \</div\>
+   391→
+   392→                    \<div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden"\>  
+   393→                        \<div class="overflow-x-auto"\>  
+   394→                            \<table class="w-full text-left text-xs text-slate-600"\>  
+   395→                                \<thead class="bg-slate-50 border-b border-slate-200 text-slate-700 uppercase font-semibold"\>  
+   396→                                    \<tr\>  
+   397→                                        \<th class="p-3.5"\>Nº Romaneio\</th\>  
+   398→                                        \<th class="p-3.5"\>Data\</th\>  
+   399→                                        \<th class="p-3.5"\>Cliente\</th\>  
+   400→                                        \<th class="p-3.5"\>WhatsApp / E-mail\</th\>  
+   401→                                        \<th class="p-3.5"\>Itens Comprados\</th\>  
+   402→                                        \<th class="p-3.5"\>Pagamento\</th\>  
+   403→                                        \<th class="p-3.5 text-right"\>Valor Total\</th\>  
+   404→                                        \<th class="p-3.5 text-center"\>Ações\</th\>  
+   405→                                    \</tr\>  
+   406→                                \</thead\>  
+   407→                                \<tbody id="romaneioTableBody" class="divide-y divide-slate-100"\>  
+   408→                                    \<\!-- Dinâmico \--\>  
+   409→                                \</tbody\>  
+   410→                            \</table\>  
+   411→                        \</div\>  
+   412→                    \</div\>  
+   413→                \</section\>
+   414→
+   415→                \<\!-- 5\. ABA FINANCEIRO \--\>  
+   416→                \<section id="tab-financeiro" class="hidden space-y-6"\>  
+   417→                    \<div class="flex justify-between items-center"\>  
+   418→                        \<h2 class="text-sm font-bold text-slate-800"\>Demonstrativo de Resultados & Fluxo\</h2\>  
+   419→                        \<button onclick="exportFinancePDF()" class="flex items-center gap-2 bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow-sm transition"\>  
+   420→                            \<i data-lucide="file-text" class="w-4 h-4"\>\</i\> Exportar Relatório DRE (PDF)  
+   421→                        \</button\>  
+   422→                    \</div\>
+   423→
+   424→                    \<\!-- Grid DRE Detalhado \--\>  
+   425→                    \<div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="financeSummaryCards"\>  
+   426→                        \<div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm"\>  
+   427→                            \<span class="text-xs font-medium text-slate-500"\>Receita Bruta Acumulada\</span\>  
+   428→                            \<h4 class="text-2xl font-bold text-slate-900 mt-1" id="finGrossSales"\>R$ 0,00\</h4\>  
+   429→                            \<p class="text-\[11px\] text-slate-400 mt-1"\>Total faturado em romaneios\</p\>  
+   430→                        \</div\>  
+   431→                        \<div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm"\>  
+   432→                            \<span class="text-xs font-medium text-slate-500"\>Custo das Mercadorias Vendidas (CMV)\</span\>  
+   433→                            \<h4 class="text-2xl font-bold text-rose-600 mt-1" id="finTotalCost"\>R$ 0,00\</h4\>  
+   434→                            \<p class="text-\[11px\] text-slate-400 mt-1"\>Custo base dos produtos baixados\</p\>  
+   435→                        \</div\>  
+   436→                        \<div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm"\>  
+   437→                            \<span class="text-xs font-medium text-slate-500"\>Lucro Operacional Líquido\</span\>  
+   438→                            \<h4 class="text-2xl font-bold text-emerald-600 mt-1" id="finNetProfit"\>R$ 0,00\</h4\>  
+   439→                            \<p class="text-\[11px\] text-emerald-600 font-semibold mt-1" id="finMarginPercent"\>Margem líquida: 0%\</p\>  
+   440→                        \</div\>  
+   441→                    \</div\>
+   442→
+   443→                    \<\!-- Métricas por Método de Pagamento \--\>  
+   444→                    \<div class="grid grid-cols-1 lg:grid-cols-3 gap-6"\>  
+   445→                        \<div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm col-span-1"\>  
+   446→                            \<h3 class="text-sm font-bold text-slate-800 mb-4"\>Vendas por Forma de Pagamento\</h3\>  
+   447→                            \<div class="h-56 flex items-center justify-center"\>  
+   448→                                \<canvas id="chartPaymentMethods"\>\</canvas\>  
+   449→                            \</div\>  
+   450→                        \</div\>
+   451→
+   452→                        \<div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm col-span-2"\>  
+   453→                            \<h3 class="text-sm font-bold text-slate-800 mb-4"\>Evolução Mensal de Faturamento & Margem\</h3\>  
+   454→                            \<div class="h-56"\>  
+   455→                                \<canvas id="chartMonthlyFinance"\>\</canvas\>  
+   456→                            \</div\>  
+   457→                        \</div\>  
+   458→                    \</div\>  
+   459→                \</section\>
+   460→
+   461→                \<\!-- 6\. ABA CONFIGURAÇÕES & PERSONALIZAÇÃO \--\>  
+   462→                \<section id="tab-configuracoes" class="hidden space-y-6 max-w-2xl"\>  
+   463→                    \<div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-6"\>  
+   464→                        \<h2 class="text-base font-bold text-slate-800 border-b pb-3"\>Identidade Visual da Marca\</h2\>  
+   465→                          
+   466→                        \<div class="flex items-center gap-6"\>  
+   467→                            \<div id="settingsLogoPreview" class="w-20 h-20 rounded-2xl bg-amber-500 flex items-center justify-center overflow-hidden border border-slate-200 shrink-0 shadow-md"\>  
+   468→                                \<i data-lucide="crown" class="w-10 h-10 text-slate-950"\>\</i\>  
+   469→                            \</div\>  
+   470→                            \<div class="space-y-2"\>  
+   471→                                \<label class="block text-xs font-semibold text-slate-700"\>Substituir Logotipo da Empresa\</label\>  
+   472→                                \<input type="file" id="logoUploadInput" accept="image/\*" onchange="handleLogoUpload(event)" class="text-xs text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-amber-500 file:text-slate-950 hover:file:bg-amber-600 cursor-pointer"\>  
+   473→                                \<p class="text-\[11px\] text-slate-400"\>Recomendado: Imagem PNG ou JPG quadrada (500x500px).\</p\>  
+   474→                            \</div\>  
+   475→                        \</div\>
+   476→
+   477→                        \<div class="space-y-4 pt-4 border-t border-slate-100"\>  
+   478→                            \<div\>  
+   479→                                \<label class="block text-xs font-semibold text-slate-700 mb-1"\>Nome do Aplicativo / Loja\</label\>  
+   480→                                \<input type="text" id="configStoreName" value="Louve Movement" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl p-2.5 focus:outline-none focus:border-amber-500"\>  
+   481→                            \</div\>  
+   482→                            \<div\>  
+   483→                                \<label class="block text-xs font-semibold text-slate-700 mb-1"\>Subtítulo / Slogan\</label\>  
+   484→                                \<input type="text" id="configStoreSubtitle" value="Controle Financeiro e de Estoque Louve Movement" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl p-2.5 focus:outline-none focus:border-amber-500"\>  
+   485→                            \</div\>  
+   486→                            \<div\>  
+   487→                                \<label class="block text-xs font-semibold text-slate-700 mb-1"\>Chave PIX Padrão (para Romaneios)\</label\>  
+   488→                                \<input type="text" id="configStorePix" value="financeiro@louvemovement.com" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl p-2.5 focus:outline-none focus:border-amber-500"\>  
+   489→                            \</div\>
+   490→
+   491→                            \<button onclick="saveStoreSettings()" class="bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-bold px-5 py-2.5 rounded-xl shadow-md transition"\>  
+   492→                                Salvar Alterações  
+   493→                            \</button\>  
+   494→                        \</div\>  
+   495→                    \</div\>  
+   496→                \</section\>  
+   497→            \</div\>  
+   498→        \</main\>  
+   499→    \</div\>
+   500→
+   501→    \<\!-- \==================== MODAL DE CADASTRO / EDIÇÃO DE PRODUTO \==================== \--\>  
+   502→    \<div id="productModal" class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm hidden items-center justify-center p-4"\>  
+   503→        \<div class="bg-white rounded-3xl w-full max-w-2xl max-h-\[90vh\] overflow-y-auto custom-scrollbar border border-slate-200 shadow-2xl p-6"\>  
+   504→            \<div class="flex justify-between items-center pb-4 border-b border-slate-100"\>  
+   505→                \<h3 class="font-bold text-base text-slate-800" id="productModalTitle"\>Cadastrar Nova Camisa\</h3\>  
+   506→                \<button onclick="closeProductModal()" class="text-slate-400 hover:text-slate-600"\>\<i data-lucide="x" class="w-5 h-5"\>\</i\>\</button\>  
+   507→            \</div\>
+   508→
+   509→            \<form id="productForm" class="mt-4 space-y-4" onsubmit="event.preventDefault(); saveProduct();"\>  
+   510→                \<input type="hidden" id="prodId"\>  
+   511→                  
+   512→                \<div class="grid grid-cols-1 sm:grid-cols-3 gap-4"\>  
+   513→                    \<\!-- Upload Imagem \--\>  
+   514→                    \<div class="sm:col-span-1 flex flex-col items-center justify-center border-2 border-dashed border-slate-200 rounded-2xl p-4 bg-slate-50 text-center"\>  
+   515→                        \<img id="prodImagePreview" src="https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=300\&auto=format\&fit=crop\&q=60" alt="Preview" class="w-24 h-24 object-cover rounded-xl mb-2 shadow-sm"\>  
+   516→                        \<label class="cursor-pointer text-\[11px\] font-bold text-amber-600 hover:underline"\>  
+   517→                            Carregar Foto  
+   518→                            \<input type="file" id="prodImageInput" accept="image/\*" onchange="previewImage(event, 'prodImagePreview')" class="hidden"\>  
+   519→                        \</label\>  
+   520→                    \</div\>
+   521→
+   522→                    \<div class="sm:col-span-2 space-y-3"\>  
+   523→                        \<div class="grid grid-cols-2 gap-3"\>  
+   524→                            \<div\>  
+   525→                                \<label class="block text-xs font-semibold text-slate-700 mb-1"\>Código SKU\</label\>  
+   526→                                \<input type="text" id="prodCode" required placeholder="LM-001" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl p-2.5 focus:outline-none focus:border-amber-500 font-mono"\>  
+   527→                            \</div\>  
+   528→                            \<div\>  
+   529→                                \<label class="block text-xs font-semibold text-slate-700 mb-1"\>Nome do Produto\</label\>  
+   530→                                \<input type="text" id="prodName" required placeholder="Camisa Streetwear Fé" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl p-2.5 focus:outline-none focus:border-amber-500"\>  
+   531→                            \</div\>  
+   532→                        \</div\>
+   533→
+   534→                        \<div class="grid grid-cols-2 gap-3"\>  
+   535→                            \<div\>  
+   536→                                \<label class="block text-xs font-semibold text-slate-700 mb-1"\>Estampa\</label\>  
+   537→                                \<input type="text" id="prodPrint" required placeholder="Ex: Cruz Frontal Minimalista" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl p-2.5 focus:outline-none focus:border-amber-500"\>  
+   538→                            \</div\>  
+   539→                            \<div\>  
+   540→                                \<label class="block text-xs font-semibold text-slate-700 mb-1"\>Cor\</label\>  
+   541→                                \<input type="text" id="prodColor" required placeholder="Ex: Preto / Off-White" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl p-2.5 focus:outline-none focus:border-amber-500"\>  
+   542→                            \</div\>  
+   543→                        \</div\>  
+   544→                    \</div\>  
+   545→                \</div\>
+   546→
+   547→                \<\!-- Estoque por Grade \--\>  
+   548→                \<div class="bg-amber-50/50 p-4 rounded-2xl border border-amber-100 space-y-2"\>  
+   549→                    \<span class="text-xs font-bold text-amber-900 block"\>Grade de Estoque Inicial por Tamanho:\</span\>  
+   550→                    \<div class="grid grid-cols-4 gap-3"\>  
+   551→                        \<div\>  
+   552→                            \<label class="block text-center text-\[11px\] font-bold text-slate-600 mb-1"\>Tam. P\</label\>  
+   553→                            \<input type="number" id="prodStockP" min="0" value="0" class="w-full text-center text-xs bg-white border border-amber-200 rounded-xl p-2 focus:outline-none"\>  
+   554→                        \</div\>  
+   555→                        \<div\>  
+   556→                            \<label class="block text-center text-\[11px\] font-bold text-slate-600 mb-1"\>Tam. M\</label\>  
+   557→                            \<input type="number" id="prodStockM" min="0" value="0" class="w-full text-center text-xs bg-white border border-amber-200 rounded-xl p-2 focus:outline-none"\>  
+   558→                        \</div\>  
+   559→                        \<div\>  
+   560→                            \<label class="block text-center text-\[11px\] font-bold text-slate-600 mb-1"\>Tam. G\</label\>  
+   561→                            \<input type="number" id="prodStockG" min="0" value="0" class="w-full text-center text-xs bg-white border border-amber-200 rounded-xl p-2 focus:outline-none"\>  
+   562→                        \</div\>  
+   563→                        \<div\>  
+   564→                            \<label class="block text-center text-\[11px\] font-bold text-slate-600 mb-1"\>Tam. GG\</label\>  
+   565→                            \<input type="number" id="prodStockGG" min="0" value="0" class="w-full text-center text-xs bg-white border border-amber-200 rounded-xl p-2 focus:outline-none"\>  
+   566→                        \</div\>  
+   567→                    \</div\>  
+   568→                    \<div class="pt-2"\>  
+   569→                        \<label class="block text-xs font-semibold text-slate-700 mb-1"\>Estoque Mínimo de Alerta Geral deste Modelo:\</label\>  
+   570→                        \<input type="number" id="prodMinStock" min="1" value="5" class="w-32 text-xs bg-white border border-slate-200 rounded-xl p-2 focus:outline-none"\>  
+   571→                    \</div\>  
+   572→                \</div\>
+   573→
+   574→                \<\!-- Preços e Lucro Inteligente \--\>  
+   575→                \<div class="grid grid-cols-1 sm:grid-cols-4 gap-3 bg-slate-50 p-4 rounded-2xl border border-slate-100"\>  
+   576→                    \<div\>  
+   577→                        \<label class="block text-\[11px\] font-semibold text-slate-600 mb-1"\>Valor de Custo (R$)\</label\>  
+   578→                        \<input type="number" step="0.01" id="prodCost" oninput="calcProfitPreview()" required placeholder="35.00" class="w-full text-xs bg-white border border-slate-200 rounded-xl p-2.5 focus:outline-none"\>  
+   579→                    \</div\>  
+   580→                    \<div\>  
+   581→                        \<label class="block text-\[11px\] font-semibold text-slate-600 mb-1"\>Valor de Venda (R$)\</label\>  
+   582→                        \<input type="number" step="0.01" id="prodPrice" oninput="calcProfitPreview()" required placeholder="89.90" class="w-full text-xs bg-white border border-slate-200 rounded-xl p-2.5 focus:outline-none"\>  
+   583→                    \</div\>  
+   584→                    \<div\>  
+   585→                        \<label class="block text-\[11px\] font-semibold text-slate-600 mb-1"\>Lucro Unitário\</label\>  
+   586→                        \<div id="previewProfitVal" class="text-xs font-bold text-emerald-600 p-2.5 bg-emerald-50 rounded-xl border border-emerald-100"\>R$ 0,00\</div\>  
+   587→                    \</div\>  
+   588→                    \<div\>  
+   589→                        \<label class="block text-\[11px\] font-semibold text-slate-600 mb-1"\>Margem de Lucro\</label\>  
+   590→                        \<div id="previewProfitMargin" class="text-xs font-bold text-emerald-600 p-2.5 bg-emerald-50 rounded-xl border border-emerald-100"\>0%\</div\>  
+   591→                    \</div\>  
+   592→                \</div\>
+   593→
+   594→                \<div class="flex justify-end gap-2 pt-3"\>  
+   595→                    \<button type="button" onclick="closeProductModal()" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl"\>Cancelar\</button\>  
+   596→                    \<button type="submit" class="px-6 py-2.5 bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-bold rounded-xl shadow-md"\>Salvar Produto\</button\>  
+   597→                \</div\>  
+   598→            \</form\>  
+   599→        \</div\>  
+   600→    \</div\>
+   601→
+   602→    \<\!-- \==================== MODAL DE CRIAÇÃO DE ROMANEIO (NOVA VENDA / PDV) \==================== \--\>  
+   603→    \<div id="romaneioModal" class="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-sm hidden items-center justify-center p-4"\>  
+   604→        \<div class="bg-white rounded-3xl w-full max-w-4xl max-h-\[95vh\] overflow-y-auto custom-scrollbar border border-slate-200 shadow-2xl p-6 flex flex-col"\>  
+   605→            \<div class="flex justify-between items-center pb-4 border-b border-slate-100"\>  
+   606→                \<div class="flex items-center gap-3"\>  
+   607→                    \<div class="w-9 h-9 rounded-xl bg-amber-500 flex items-center justify-center text-slate-950 font-bold"\>  
+   608→                        \<i data-lucide="receipt" class="w-5 h-5"\>\</i\>  
+   609→                    \</div\>  
+   610→                    \<div\>  
+   611→                        \<h3 class="font-bold text-base text-slate-800"\>Novo Romaneio de Venda\</h3\>  
+   612→                        \<p class="text-\[11px\] text-slate-400"\>Emissão com baixa de estoque automática e recibo\</p\>  
+   613→                    \</div\>  
+   614→                \</div\>  
+   615→                \<button onclick="closeRomaneioModal()" class="text-slate-400 hover:text-slate-600"\>\<i data-lucide="x" class="w-5 h-5"\>\</i\>\</button\>  
+   616→            \</div\>
+   617→
+   618→            \<div class="mt-4 grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1"\>  
+   619→                \<\!-- Coluna Esquerda: Dados do Cliente & Pagamento \--\>  
+   620→                \<div class="space-y-4 lg:col-span-1"\>  
+   621→                    \<h4 class="text-xs font-bold text-slate-700 uppercase tracking-wide"\>1. Dados do Cliente\</h4\>  
+   622→                      
+   623→                    \<div\>  
+   624→                        \<label class="block text-xs font-semibold text-slate-700 mb-1"\>Nome Completo\</label\>  
+   625→                        \<input type="text" id="romClientName" placeholder="Ex: Lucas Gabriel" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl p-2.5 focus:outline-none focus:border-amber-500"\>  
+   626→                    \</div\>  
+   627→                    \<div\>  
+   628→                        \<label class="block text-xs font-semibold text-slate-700 mb-1"\>WhatsApp\</label\>  
+   629→                        \<input type="text" id="romClientPhone" placeholder="(11) 99999-9999" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl p-2.5 focus:outline-none focus:border-amber-500"\>  
+   630→                    \</div\>  
+   631→                    \<div\>  
+   632→                        \<label class="block text-xs font-semibold text-slate-700 mb-1"\>E-mail\</label\>  
+   633→                        \<input type="email" id="romClientEmail" placeholder="cliente@email.com" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl p-2.5 focus:outline-none focus:border-amber-500"\>  
+   634→                    \</div\>
+   635→
+   636→                    \<h4 class="text-xs font-bold text-slate-700 uppercase tracking-wide pt-2"\>2. Pagamento\</h4\>  
+   637→                    \<div\>  
+   638→                        \<label class="block text-xs font-semibold text-slate-700 mb-1"\>Forma de Pagamento\</label\>  
+   639→                        \<select id="romPaymentMethod" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl p-2.5 focus:outline-none"\>  
+   640→                            \<option value="PIX"\>PIX (Instantâneo)\</option\>  
+   641→                            \<option value="Cartão de Crédito"\>Cartão de Crédito\</option\>  
+   642→                            \<option value="Cartão de Débito"\>Cartão de Débito\</option\>  
+   643→                            \<option value="Dinheiro"\>Dinheiro\</option\>  
+   644→                        \</select\>  
+   645→                    \</div\>  
+   646→                    \<div\>  
+   647→                        \<label class="block text-xs font-semibold text-slate-700 mb-1"\>Data da Venda\</label\>  
+   648→                        \<input type="date" id="romDate" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl p-2.5 focus:outline-none"\>  
+   649→                    \</div\>  
+   650→                \</div\>
+   651→
+   652→                \<\!-- Coluna Direita: Seleção de Peças e Carrinho \--\>  
+   653→                \<div class="space-y-4 lg:col-span-2 flex flex-col justify-between"\>  
+   654→                    \<div\>  
+   655→                        \<h4 class="text-xs font-bold text-slate-700 uppercase tracking-wide"\>3. Adicionar Camisas ao Romaneio\</h4\>  
+   656→                          
+   657→                        \<\!-- Seletor de Camisas \--\>  
+   658→                        \<div class="mt-2 grid grid-cols-1 sm:grid-cols-12 gap-2 bg-slate-50 p-3 rounded-2xl border border-slate-200 items-end"\>  
+   659→                            \<div class="sm:col-span-6"\>  
+   660→                                \<label class="block text-\[11px\] font-semibold text-slate-600 mb-1"\>Selecione o Modelo\</label\>  
+   661→                                \<select id="romProductSelect" onchange="updateRomaneioSizeOptions()" class="w-full text-xs bg-white border border-slate-200 rounded-xl p-2 focus:outline-none"\>  
+   662→                                    \<\!-- Opções dinâmicas \--\>  
+   663→                                \</select\>  
+   664→                            \</div\>  
+   665→                            \<div class="sm:col-span-3"\>  
+   666→                                \<label class="block text-\[11px\] font-semibold text-slate-600 mb-1"\>Tamanho\</label\>  
+   667→                                \<select id="romSizeSelect" class="w-full text-xs bg-white border border-slate-200 rounded-xl p-2 focus:outline-none"\>  
+   668→                                    \<option value="P"\>P\</option\>  
+   669→                                    \<option value="M"\>M\</option\>  
+   670→                                    \<option value="G"\>G\</option\>  
+   671→                                    \<option value="GG"\>GG\</option\>  
+   672→                                \</select\>  
+   673→                            \</div\>  
+   674→                            \<div class="sm:col-span-3"\>  
+   675→                                \<button type="button" onclick="addItemToRomaneioCart()" class="w-full bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold py-2 rounded-xl transition"\>  
+   676→                                    \+ Adicionar  
+   677→                                \</button\>  
+   678→                            \</div\>  
+   679→                        \</div\>
+   680→
+   681→                        \<\!-- Lista de Itens no Romaneio Atual \--\>  
+   682→                        \<div class="mt-4 border border-slate-200 rounded-2xl overflow-hidden"\>  
+   683→                            \<div class="bg-slate-100 p-2.5 text-xs font-bold text-slate-700"\>Itens do Romaneio\</div\>  
+   684→                            \<div class="max-h-48 overflow-y-auto divide-y divide-slate-100" id="romCartItemsList"\>  
+   685→                                \<p class="p-4 text-center text-xs text-slate-400"\>Nenhum item adicionado ainda.\</p\>  
+   686→                            \</div\>  
+   687→                        \</div\>  
+   688→                    \</div\>
+   689→
+   690→                    \<\!-- Resumo Financeiro da Venda \--\>  
+   691→                    \<div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-center justify-between mt-4"\>  
+   692→                        \<div\>  
+   693→                            \<span class="text-xs text-amber-900 font-medium"\>Total do Romaneio:\</span\>  
+   694→                            \<h3 class="text-2xl font-extrabold text-slate-900" id="romCartTotal"\>R$ 0,00\</h3\>  
+   695→                        \</div\>  
+   696→                        \<button onclick="finalizeRomaneio()" class="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs px-6 py-3 rounded-xl shadow-lg shadow-amber-500/20 transition"\>  
+   697→                            Finalizar e Baixar Estoque  
+   698→                        \</button\>  
+   699→                    \</div\>  
+   700→                \</div\>  
+   701→            \</div\>  
+   702→        \</div\>  
+   703→    \</div\>
+   704→
+   705→    \<\!-- \==================== CONTAINER ESCONDIDO PARA GERAÇÃO DO RECIBO / ROMANEIO PDF \==================== \--\>  
+   706→    \<div id="pdfExportContainer" class="hidden p-8 bg-white text-slate-900 max-w-2xl mx-auto"\>  
+   707→        \<\!-- Renderizado dinamicamente para exportar PDF \--\>  
+   708→    \</div\>
+   709→
+   710→    \<\!-- \==================== LÓGICA JAVASCRIPT COMPLETA \==================== \--\>  
+   711→    \<script\>  
+   712→        // \--- ESTADO GLOBAL DA APLICAÇÃO \---  
+   713→        const APP\_STATE \= {  
+   714→            brandName: "Louve Movement",  
+   715→            brandSubtitle: "Controle Financeiro e de Estoque Louve Movement",  
+   716→            brandLogo: null, // Base64 se customizado  
+   717→            pixKey: "financeiro@louvemovement.com",  
+   718→            products: \[\],  
+   719→            sales: \[\],  
+   720→            currentCart: \[\]  
+   721→        };
+   722→
+   723→        // Carregar dados iniciais de demonstração se não existirem no localStorage  
+   724→        function initAppStorage() {  
+   725→            const savedState \= localStorage.getItem('LOUVE\_MOVEMENT\_DATA');  
+   726→            if (savedState) {  
+   727→                const parsed \= JSON.parse(savedState);  
+   728→                Object.assign(APP\_STATE, parsed);  
+   729→            } else {  
+   730→                // Produtos semente com tema Louve Movement  
+   731→                APP\_STATE.products \= \[  
+   732→                    {  
+   733→                        id: "prod\_1",  
+   734→                        code: "LM-ST-01",  
+   735→                        name: "Camisa Oversized Lion of Judah",  
+   736→                        print: "Leão de Judá Floral Costas",  
+   737→                        color: "Preto Mineral",  
+   738→                        cost: 38.00,  
+   739→                        price: 99.90,  
+   740→                        minStock: 6,  
+   741→                        sizes: { P: 5, M: 8, G: 12, GG: 4 },  
+   742→                        image: "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=300\&auto=format\&fit=crop\&q=60"  
+   743→                    },  
+   744→                    {  
+   745→                        id: "prod\_2",  
+   746→                        code: "LM-ST-02",  
+   747→                        name: "Camisa Minimalist Grace",  
+   748→                        print: "Graça Sobre Graça Peito",  
+   749→                        color: "Off-White / Bege",  
+   750→                        cost: 34.00,  
+   751→                        price: 89.90,  
+   752→                        minStock: 5,  
+   753→                        sizes: { P: 2, M: 4, G: 3, GG: 1 },  
+   754→                        image: "https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?w=300\&auto=format\&fit=crop\&q=60"  
+   755→                    }  
+   756→                \];  
+   757→                APP\_STATE.sales \= \[\];  
+   758→                saveToLocalStorage();  
+   759→            }  
+   760→        }
+   761→
+   762→        function saveToLocalStorage() {  
+   763→            localStorage.setItem('LOUVE\_MOVEMENT\_DATA', JSON.stringify(APP\_STATE));  
+   764→        }
+   765→
+   766→        // \--- SISTEMA DE AUTENTICAÇÃO \---  
+   767→        function handleLogin() {  
+   768→            document.getElementById('authScreen').classList.add('hidden');  
+   769→            document.getElementById('appContainer').classList.remove('hidden');  
+   770→            refreshAllViews();  
+   771→        }
+   772→
+   773→        function handleLoginGoogle() {  
+   774→            alert('Autenticado com sucesso via Conta Google\!');  
+   775→            handleLogin();  
+   776→        }
+   777→
+   778→        function handleLogout() {  
+   779→            document.getElementById('authScreen').classList.remove('hidden');  
+   780→            document.getElementById('appContainer').classList.add('hidden');  
+   781→        }
+   782→
+   783→        // \--- NAVEGAÇÃO ENTRE ABAS \---  
+   784→        function switchTab(tabId) {  
+   785→            document.querySelectorAll('\#tabContainer \> section').forEach(sec \=\> sec.classList.add('hidden'));  
+   786→            document.querySelectorAll('.nav-item').forEach(btn \=\> {  
+   787→                btn.classList.remove('bg-slate-800/80', 'text-amber-400');  
+   788→                btn.classList.add('text-slate-300');  
+   789→            });
+   790→
+   791→            const activeSection \= document.getElementById('tab-' \+ tabId);  
+   792→            if (activeSection) activeSection.classList.remove('hidden');
+   793→
+   794→            const activeBtn \= document.querySelector(\`.nav-item\[data-tab="${tabId}"\]\`);  
+   795→            if (activeBtn) {  
+   796→                activeBtn.classList.add('bg-slate-800/80', 'text-amber-400');  
+   797→                activeBtn.classList.remove('text-slate-300');  
+   798→            }
+   799→
+
+[showing lines 300-799 of 1592; use offset=800 with limit to continue reading]

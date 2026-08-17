@@ -1,0 +1,406 @@
+     1→import type { Product, SaleRecord, OtherProduct, OtherSaleRecord, AppSettings } from '@/types/louve';
+     2→
+     3→const LOGO_FALLBACK = '/logo.jpeg';
+     4→
+     5→function getLogo(settings: AppSettings): string {
+     6→  return settings.brandLogo || LOGO_FALLBACK;
+     7→}
+     8→
+     9→function imgToHtml(src: string, w: number, h: number, radius = 8): string {
+    10→  if (!src) return '<div style="width:' + w + 'px;height:' + h + 'px;border-radius:' + radius + 'px;background:#e2e8f0;display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:' + Math.floor(w / 3) + 'px;">SEM</div>';
+    11→  return '<img src="' + src + '" style="width:' + w + 'px;height:' + h + 'px;border-radius:' + radius + 'px;object-fit:cover;" />';
+    12→}
+    13→
+    14→function waitForImages(container: HTMLDivElement): Promise<void> {
+    15→  const imgs = Array.from(container.querySelectorAll('img'));
+    16→  if (imgs.length === 0) return Promise.resolve();
+    17→  return Promise.all(
+    18→    imgs.map(
+    19→      (img) =>
+    20→        new Promise<void>((resolve) => {
+    21→          if (img.complete) {
+    22→            resolve();
+    23→          } else {
+    24→            img.onload = () => resolve();
+    25→            img.onerror = () => resolve();
+    26→            setTimeout(resolve, 3000);
+    27→          }
+    28→        })
+    29→    )
+    30→  ).then(() => {});
+    31→}
+    32→
+    33→async function renderAndDownload(html: string, filename: string) {
+    34→  let container: HTMLDivElement | null = null;
+    35→  try {
+    36→    const jsPDF = (await import('jspdf')).default;
+    37→    const html2canvas = (await import('html2canvas')).default;
+    38→
+    39→    container = document.createElement('div');
+    40→    container.style.cssText = 'position:fixed;left:-9999px;top:0;width:700px;padding:24px;background:white;font-family:sans-serif;z-index:-1;';
+    41→    container.innerHTML = html;
+    42→    document.body.appendChild(container);
+    43→
+    44→    await waitForImages(container);
+    45→    await new Promise<void>((r) => setTimeout(r, 500));
+    46→
+    47→    const canvas = await html2canvas(container, {
+    48→      scale: 2,
+    49→      useCORS: true,
+    50→      allowTaint: true,
+    51→      logging: false,
+    52→    });
+    53→
+    54→    const pdf = new jsPDF('p', 'mm', 'a4');
+    55→    const imgWidth = 190;
+    56→    const pageHeight = 277;
+    57→    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+    58→
+    59→    if (imgHeight <= pageHeight) {
+    60→      pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 10, 10, imgWidth, imgHeight);
+    61→    } else {
+    62→      const totalPages = Math.ceil(imgHeight / pageHeight);
+    63→      for (let i = 0; i < totalPages; i++) {
+    64→        if (i > 0) pdf.addPage();
+    65→        const srcY = (i * pageHeight / imgHeight) * canvas.height;
+    66→        const srcH = Math.min((pageHeight / imgHeight) * canvas.height, canvas.height - srcY);
+    67→        const slice = document.createElement('canvas');
+    68→        slice.width = canvas.width;
+    69→        slice.height = srcH;
+    70→        const ctx = slice.getContext('2d');
+    71→        if (ctx) {
+    72→          ctx.drawImage(canvas, 0, srcY, canvas.width, srcH, 0, 0, canvas.width, srcH);
+    73→        }
+    74→        const sliceImgH = (srcH * imgWidth) / canvas.width;
+    75→        pdf.addImage(slice.toDataURL('image/png'), 'PNG', 10, 10, imgWidth, sliceImgH);
+    76→      }
+    77→    }
+    78→    pdf.save(filename);
+    79→  } catch (err) {
+    80→    console.error('PDF export error:', err);
+    81→    alert('Erro ao gerar PDF. Tente novamente.');
+    82→  } finally {
+    83→    if (container && container.parentNode) {
+    84→      container.parentNode.removeChild(container);
+    85→    }
+    86→  }
+    87→}
+    88→
+    89→export async function exportDashboardPDF(
+    90→  settings: AppSettings,
+    91→  kpis: { label: string; value: string; sub: string; color: string }[],
+    92→  chartImgSales: string,
+    93→  chartImgSizes: string,
+    94→  recentSales: SaleRecord[],
+    95→  title: string
+    96→) {
+    97→  const logo = getLogo(settings);
+    98→  const kpiHtml = kpis.map((k) =>
+    99→    '<div style="background:' + k.color + ';border:1px solid #e2e8f0;border-radius:10px;padding:14px;">' +
+   100→      '<div style="font-size:10px;color:#64748b;">' + k.label + '</div>' +
+   101→      '<div style="font-size:22px;font-weight:bold;color:#0f172a;margin:4px 0 0 0;">' + k.value + '</div>' +
+   102→      '<div style="font-size:10px;color:#94a3b8;">' + k.sub + '</div>' +
+   103→    '</div>'
+   104→  ).join('');
+   105→
+   106→  let salesHtml = '';
+   107→  if (recentSales.length > 0) {
+   108→    const rows = recentSales.slice(0, 10).map((s, idx) =>
+   109→      '<tr style="background:' + (idx % 2 === 0 ? '#fff' : '#f8fafc') + ';"><td style="padding:8px;font-weight:bold;">' + s.id + '</td><td style="padding:8px;text-align:center;">' + s.date + '</td><td style="padding:8px;">' + s.client.name + '</td><td style="padding:8px;text-align:center;">' + s.items.reduce((sum, i) => sum + i.qty, 0) + '</td><td style="padding:8px;text-align:right;font-weight:bold;">R$ ' + s.total.toFixed(2) + '</td></tr>'
+   110→    ).join('');
+   111→    salesHtml = '<div style="border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;"><div style="background:#f8fafc;padding:8px 12px;font-size:11px;font-weight:bold;color:#334155;border-bottom:1px solid #e2e8f0;">Ultimas Vendas</div><table style="width:100%;border-collapse:collapse;font-size:10px;"><tr style="background:#f1f5f9;"><th style="padding:8px;text-align:left;">Romaneio</th><th style="padding:8px;">Data</th><th style="padding:8px;text-align:left;">Cliente</th><th style="padding:8px;">Pecas</th><th style="padding:8px;text-align:right;">Total</th></tr>' + rows + '</table></div>';
+   112→  }
+   113→
+   114→  const html = '<div style="font-family:sans-serif;padding:24px;">' +
+   115→    '<div style="display:flex;align-items:center;gap:12px;border-bottom:3px solid #d97706;padding-bottom:12px;margin-bottom:16px;">' +
+   116→      imgToHtml(logo, 48, 48, 10) +
+   117→      '<div><h1 style="font-size:20px;font-weight:bold;margin:0;color:#1e293b;">' + settings.brandName + '</h1><p style="font-size:11px;color:#64748b;margin:2px 0 0 0;">' + title + '</p></div>' +
+   118→      '<div style="margin-left:auto;text-align:right;font-size:10px;color:#94a3b8;">' + new Date().toLocaleDateString('pt-BR') + ' ' + new Date().toLocaleTimeString('pt-BR') + '</div>' +
+   119→    '</div>' +
+   120→    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;">' + kpiHtml + '</div>' +
+   121→    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">' +
+   122→      '<div style="border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;"><div style="background:#f8fafc;padding:8px 12px;font-size:11px;font-weight:bold;color:#334155;border-bottom:1px solid #e2e8f0;">Faturamento vs Lucro</div>' + (chartImgSales ? '<img src="' + chartImgSales + '" style="width:100%;height:200px;object-fit:contain;background:white;" />' : '<div style="height:200px;display:flex;align-items:center;justify-content:center;color:#cbd5e1;font-size:12px;">Sem dados</div>') + '</div>' +
+   123→      '<div style="border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;"><div style="background:#f8fafc;padding:8px 12px;font-size:11px;font-weight:bold;color:#334155;border-bottom:1px solid #e2e8f0;">Distribuicao por Tamanhos</div>' + (chartImgSizes ? '<img src="' + chartImgSizes + '" style="width:100%;height:200px;object-fit:contain;background:white;" />' : '<div style="height:200px;display:flex;align-items:center;justify-content:center;color:#cbd5e1;font-size:12px;">Sem dados</div>') + '</div>' +
+   124→    '</div>' +
+   125→    salesHtml +
+   126→  '</div>';
+   127→
+   128→  await renderAndDownload(html, title.replace(/\s+/g, '_') + '_' + settings.brandName.replace(/\s+/g, '_') + '.pdf');
+   129→}
+   130→
+   131→export async function exportProductsPDF(settings: AppSettings, products: Product[], title: string) {
+   132→  const logo = getLogo(settings);
+   133→  const productsHtml = products.map((p) => {
+   134→    const total = p.sizes.P + p.sizes.M + p.sizes.G + p.sizes.GG;
+   135→    const profit = p.price - p.cost;
+   136→    const margin = p.price > 0 ? ((profit / p.price) * 100).toFixed(0) : '0';
+   137→    const sizesHtml = ['P', 'M', 'G', 'GG'].map((s) =>
+   138→      '<div style="text-align:center;"><div style="font-weight:bold;font-size:12px;color:#334155;">' + s + '</div><div style="font-size:18px;font-weight:bold;color:' + (p.sizes[s as keyof typeof p.sizes] <= (p.minStock || 5) ? '#dc2626' : '#0f172a') + ';">' + p.sizes[s as keyof typeof p.sizes] + '</div></div>'
+   139→    ).join('<div style="width:1px;background:#e2e8f0;"></div>');
+   140→
+   141→    return '<div style="border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;margin-bottom:14px;">' +
+   142→      '<div style="display:flex;gap:14px;padding:14px;background:#f8fafc;">' +
+   143→        '<div style="flex-shrink:0;">' + imgToHtml(p.image, 72, 72, 10) + '</div>' +
+   144→        '<div style="flex:1;">' +
+   145→          '<div style="font-weight:bold;font-size:13px;color:#0f172a;">' + p.name + '</div>' +
+   146→          '<div style="font-size:10px;color:#64748b;">' + p.code + ' | ' + p.print + ' | ' + p.color + '</div>' +
+   147→          '<div style="margin-top:8px;display:flex;gap:16px;font-size:11px;">' +
+   148→            '<div><span style="color:#64748b;">Custo:</span> <strong>R$ ' + p.cost.toFixed(2) + '</strong></div>' +
+   149→            '<div><span style="color:#64748b;">Venda:</span> <strong style="color:#d97706;">R$ ' + p.price.toFixed(2) + '</strong></div>' +
+   150→            '<div><span style="color:#64748b;">Lucro:</span> <strong style="color:#10b981;">R$ ' + profit.toFixed(2) + ' (' + margin + '%)</strong></div>' +
+   151→          '</div>' +
+   152→        '</div>' +
+   153→        '<div style="text-align:center;flex-shrink:0;"><div style="font-size:10px;color:#94a3b8;">Estoque Total</div><div style="font-size:20px;font-weight:bold;color:#0f172a;">' + total + '</div><div style="font-size:9px;color:#94a3b8;">unidades</div></div>' +
+   154→      '</div>' +
+   155→      '<div style="display:flex;justify-content:space-around;padding:10px;background:white;">' + sizesHtml + '</div>' +
+   156→    '</div>';
+   157→  }).join('');
+   158→
+   159→  const html = '<div style="font-family:sans-serif;padding:24px;">' +
+   160→    '<div style="display:flex;align-items:center;gap:12px;border-bottom:3px solid #d97706;padding-bottom:12px;margin-bottom:16px;">' +
+   161→      imgToHtml(logo, 48, 48, 10) +
+   162→      '<div><h1 style="font-size:20px;font-weight:bold;margin:0;color:#1e293b;">' + settings.brandName + '</h1><p style="font-size:11px;color:#64748b;margin:2px 0 0 0;">' + title + '</p></div>' +
+   163→      '<div style="margin-left:auto;text-align:right;font-size:10px;color:#94a3b8;">Gerado em: ' + new Date().toLocaleDateString('pt-BR') + '</div>' +
+   164→    '</div>' +
+   165→    productsHtml +
+   166→  '</div>';
+   167→
+   168→  await renderAndDownload(html, title.replace(/\s+/g, '_') + '.pdf');
+   169→}
+   170→
+   171→export async function exportStockPDF(settings: AppSettings, products: Product[], title: string) {
+   172→  const logo = getLogo(settings);
+   173→  const rowsHtml = products.map((p, idx) => {
+   174→    const total = p.sizes.P + p.sizes.M + p.sizes.G + p.sizes.GG;
+   175→    const isLow = total <= (p.minStock || 5);
+   176→    return '<tr style="background:' + (idx % 2 === 0 ? '#fff' : '#f8fafc') + ';"><td style="padding:8px;"><div style="display:flex;align-items:center;gap:8px;">' + imgToHtml(p.image, 28, 28, 6) + '<div><div style="font-weight:bold;">' + p.name + '</div><div style="color:#94a3b8;font-size:9px;">' + p.code + ' | ' + p.color + '</div></div></div></td><td style="padding:8px;text-align:center;font-weight:bold;">' + p.sizes.P + '</td><td style="padding:8px;text-align:center;font-weight:bold;">' + p.sizes.M + '</td><td style="padding:8px;text-align:center;font-weight:bold;">' + p.sizes.G + '</td><td style="padding:8px;text-align:center;font-weight:bold;">' + p.sizes.GG + '</td><td style="padding:8px;text-align:center;font-weight:bold;color:' + (isLow ? '#dc2626' : '#0f172a') + ';">' + total + '</td><td style="padding:8px;text-align:center;">' + p.minStock + '</td><td style="padding:8px;text-align:center;"><span style="padding:2px 8px;border-radius:99px;font-size:9px;font-weight:bold;color:white;background:' + (isLow ? '#dc2626' : '#10b981') + ';">' + (isLow ? 'BAIXO' : 'OK') + '</span></td></tr>';
+   177→  }).join('');
+   178→
+   179→  const html = '<div style="font-family:sans-serif;padding:24px;">' +
+   180→    '<div style="display:flex;align-items:center;gap:12px;border-bottom:3px solid #d97706;padding-bottom:12px;margin-bottom:16px;">' +
+   181→      imgToHtml(logo, 48, 48, 10) +
+   182→      '<div><h1 style="font-size:20px;font-weight:bold;margin:0;color:#1e293b;">' + settings.brandName + '</h1><p style="font-size:11px;color:#64748b;margin:2px 0 0 0;">' + title + '</p></div>' +
+   183→      '<div style="margin-left:auto;text-align:right;font-size:10px;color:#94a3b8;">Gerado em: ' + new Date().toLocaleDateString('pt-BR') + '</div>' +
+   184→    '</div>' +
+   185→    '<table style="width:100%;border-collapse:collapse;font-size:10px;"><thead><tr style="background:#d97706;color:white;"><th style="padding:10px;text-align:left;">Produto</th><th style="padding:10px;text-align:center;">P</th><th style="padding:10px;text-align:center;">M</th><th style="padding:10px;text-align:center;">G</th><th style="padding:10px;text-align:center;">GG</th><th style="padding:10px;text-align:center;">Total</th><th style="padding:10px;text-align:center;">Min.</th><th style="padding:10px;text-align:center;">Status</th></tr></thead><tbody>' + rowsHtml + '</tbody></table>' +
+   186→  '</div>';
+   187→
+   188→  await renderAndDownload(html, title.replace(/\s+/g, '_') + '.pdf');
+   189→}
+   190→
+   191→export async function exportFinancePDF(
+   192→  settings: AppSettings,
+   193→  data: {
+   194→    totalGross: number;
+   195→    totalCost: number;
+   196→    netProfit: number;
+   197→    margin: string;
+   198→    ticketMedio: number;
+   199→    salesCount: number;
+   200→    chartImgMonthly: string;
+   201→    chartImgPayment: string;
+   202→  },
+   203→  title: string
+   204→) {
+   205→  const logo = getLogo(settings);
+   206→  const html = '<div style="font-family:sans-serif;padding:24px;">' +
+   207→    '<div style="display:flex;align-items:center;gap:12px;border-bottom:3px solid #d97706;padding-bottom:12px;margin-bottom:16px;">' +
+   208→      imgToHtml(logo, 48, 48, 10) +
+   209→      '<div><h1 style="font-size:20px;font-weight:bold;margin:0;color:#1e293b;">' + settings.brandName + '</h1><p style="font-size:11px;color:#64748b;margin:2px 0 0 0;">' + title + '</p></div>' +
+   210→      '<div style="margin-left:auto;text-align:right;font-size:10px;color:#94a3b8;">Gerado em: ' + new Date().toLocaleDateString('pt-BR') + '</div>' +
+   211→    '</div>' +
+   212→    '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:20px;">' +
+   213→      '<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:14px;text-align:center;"><div style="font-size:10px;color:#92400e;">Faturamento Bruto</div><div style="font-size:20px;font-weight:bold;color:#d97706;">R$ ' + data.totalGross.toFixed(2) + '</div></div>' +
+   214→      '<div style="background:#ecfdf5;border:1px solid #a7f3d0;border-radius:10px;padding:14px;text-align:center;"><div style="font-size:10px;color:#065f46;">Lucro Liquido</div><div style="font-size:20px;font-weight:bold;color:#10b981;">R$ ' + data.netProfit.toFixed(2) + '</div></div>' +
+   215→      '<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;padding:14px;text-align:center;"><div style="font-size:10px;color:#0c4a6e;">Ticket Medio</div><div style="font-size:20px;font-weight:bold;color:#0284c7;">R$ ' + data.ticketMedio.toFixed(2) + '</div></div>' +
+   216→    '</div>' +
+   217→    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">' +
+   218→      '<div style="border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;"><div style="background:#f8fafc;padding:8px 12px;font-size:11px;font-weight:bold;color:#334155;border-bottom:1px solid #e2e8f0;">Evolucao Mensal</div>' + (data.chartImgMonthly ? '<img src="' + data.chartImgMonthly + '" style="width:100%;height:220px;object-fit:contain;background:white;" />' : '<div style="height:220px;display:flex;align-items:center;justify-content:center;color:#cbd5e1;">Sem dados</div>') + '</div>' +
+   219→      '<div style="border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;"><div style="background:#f8fafc;padding:8px 12px;font-size:11px;font-weight:bold;color:#334155;border-bottom:1px solid #e2e8f0;">Formas de Pagamento</div>' + (data.chartImgPayment ? '<img src="' + data.chartImgPayment + '" style="width:100%;height:220px;object-fit:contain;background:white;" />' : '<div style="height:220px;display:flex;align-items:center;justify-content:center;color:#cbd5e1;">Sem dados</div>') + '</div>' +
+   220→    '</div>' +
+   221→    '<div style="border:2px solid #e2e8f0;border-radius:12px;overflow:hidden;">' +
+   222→      '<div style="background:#1e293b;color:white;padding:12px 16px;font-size:13px;font-weight:bold;">Demonstrativo de Resultados (DRE)</div>' +
+   223→      '<div style="padding:4px 0;">' +
+   224→        '<div style="display:flex;justify-content:space-between;padding:14px 16px;border-bottom:1px solid #f1f5f9;font-size:12px;"><span style="color:#334155;">(+) Receita Bruta de Vendas</span><span style="font-weight:bold;">R$ ' + data.totalGross.toFixed(2) + '</span></div>' +
+   225→        '<div style="display:flex;justify-content:space-between;padding:14px 16px;border-bottom:1px solid #f1f5f9;font-size:12px;background:#fef2f2;"><span style="color:#991b1b;">(-) Custo das Mercadorias (CMV)</span><span style="font-weight:bold;color:#dc2626;">- R$ ' + data.totalCost.toFixed(2) + '</span></div>' +
+   226→        '<div style="display:flex;justify-content:space-between;padding:14px 16px;font-size:12px;background:#ecfdf5;"><span style="font-weight:bold;color:#065f46;">(=) Lucro Liquido Operacional</span><span style="font-weight:bold;font-size:16px;color:#059669;">R$ ' + data.netProfit.toFixed(2) + '</span></div>' +
+   227→        '<div style="display:flex;justify-content:space-between;padding:14px 16px;font-size:12px;background:#fffbeb;border-radius:0 0 10px 10px;"><span style="font-weight:bold;color:#92400e;">Margem Liquida</span><span style="font-weight:bold;font-size:16px;color:#d97706;">' + data.margin + '%</span></div>' +
+   228→      '</div>' +
+   229→    '</div>' +
+   230→  '</div>';
+   231→
+   232→  await renderAndDownload(html, title.replace(/\s+/g, '_') + '.pdf');
+   233→}
+   234→
+   235→export async function exportOtherProductsPDF(settings: AppSettings, products: OtherProduct[]) {
+   236→  const logo = getLogo(settings);
+   237→  const productsHtml = products.map((p) => {
+   238→    const profit = p.price - p.cost;
+   239→    const margin = p.price > 0 ? ((profit / p.price) * 100).toFixed(0) : '0';
+   240→    const isLow = p.stock <= p.minStock;
+   241→    return '<div style="border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;margin-bottom:14px;">' +
+   242→      '<div style="display:flex;gap:14px;padding:14px;background:#f8fafc;">' +
+   243→        '<div style="flex-shrink:0;">' + imgToHtml(p.image, 72, 72, 10) + '</div>' +
+   244→        '<div style="flex:1;">' +
+   245→          '<div style="font-weight:bold;font-size:13px;color:#0f172a;">' + p.name + '</div>' +
+   246→          '<div style="font-size:10px;color:#64748b;">' + p.code + ' | ' + p.category + ' | ' + p.description + '</div>' +
+   247→          '<div style="margin-top:6px;display:flex;gap:16px;font-size:11px;">' +
+   248→            '<div><span style="color:#64748b;">Custo:</span> <strong>R$ ' + p.cost.toFixed(2) + '</strong></div>' +
+   249→            '<div><span style="color:#64748b;">Venda:</span> <strong style="color:#d97706;">R$ ' + p.price.toFixed(2) + '</strong></div>' +
+   250→            '<div><span style="color:#64748b;">Lucro:</span> <strong style="color:#10b981;">R$ ' + profit.toFixed(2) + ' (' + margin + '%)</strong></div>' +
+   251→          '</div>' +
+   252→          '<div style="margin-top:6px;font-size:10px;color:#64748b;">Unidade: ' + p.unitType + (p.unitType === 'caixa' || p.unitType === 'kit' ? ' (' + p.kitSize + ' un)' : '') + '</div>' +
+   253→        '</div>' +
+   254→        '<div style="text-align:center;flex-shrink:0;"><div style="font-size:10px;color:#94a3b8;">Estoque</div><div style="font-size:20px;font-weight:bold;color:' + (isLow ? '#dc2626' : '#0f172a') + ';">' + p.stock + '</div><div style="font-size:9px;color:#94a3b8;">' + p.unitType + '(s)</div></div>' +
+   255→      '</div>' +
+   256→    '</div>';
+   257→  }).join('');
+   258→
+   259→  const html = '<div style="font-family:sans-serif;padding:24px;">' +
+   260→    '<div style="display:flex;align-items:center;gap:12px;border-bottom:3px solid #d97706;padding-bottom:12px;margin-bottom:16px;">' +
+   261→      imgToHtml(logo, 48, 48, 10) +
+   262→      '<div><h1 style="font-size:20px;font-weight:bold;margin:0;color:#1e293b;">' + settings.brandName + '</h1><p style="font-size:11px;color:#64748b;margin:2px 0 0 0;">Catalogo de Outros Produtos</p></div>' +
+   263→      '<div style="margin-left:auto;text-align:right;font-size:10px;color:#94a3b8;">Gerado em: ' + new Date().toLocaleDateString('pt-BR') + '</div>' +
+   264→    '</div>' +
+   265→    productsHtml +
+   266→  '</div>';
+   267→
+   268→  await renderAndDownload(html, 'Catalogo_Outros_Produtos.pdf');
+   269→}
+   270→
+   271→export async function exportOtherStockPDF(settings: AppSettings, products: OtherProduct[]) {
+   272→  const logo = getLogo(settings);
+   273→  const rowsHtml = products.map((p, idx) => {
+   274→    const isLow = p.stock <= p.minStock;
+   275→    return '<tr style="background:' + (idx % 2 === 0 ? '#fff' : '#f8fafc') + ';"><td style="padding:8px;"><div style="display:flex;align-items:center;gap:8px;">' + imgToHtml(p.image, 28, 28, 6) + '<div><div style="font-weight:bold;">' + p.name + '</div><div style="color:#94a3b8;font-size:9px;">' + p.code + ' | ' + p.category + '</div></div></div></td><td style="padding:8px;text-align:center;">' + p.unitType + '</td><td style="padding:8px;text-align:center;font-weight:bold;">' + p.stock + '</td><td style="padding:8px;text-align:center;">' + p.minStock + '</td><td style="padding:8px;text-align:right;font-weight:bold;">R$ ' + p.price.toFixed(2) + '</td><td style="padding:8px;text-align:center;"><span style="padding:2px 8px;border-radius:99px;font-size:9px;font-weight:bold;color:white;background:' + (isLow ? '#dc2626' : '#10b981') + ';">' + (isLow ? 'BAIXO' : 'OK') + '</span></td></tr>';
+   276→  }).join('');
+   277→
+   278→  const html = '<div style="font-family:sans-serif;padding:24px;">' +
+   279→    '<div style="display:flex;align-items:center;gap:12px;border-bottom:3px solid #d97706;padding-bottom:12px;margin-bottom:16px;">' +
+   280→      imgToHtml(logo, 48, 48, 10) +
+   281→      '<div><h1 style="font-size:20px;font-weight:bold;margin:0;color:#1e293b;">' + settings.brandName + '</h1><p style="font-size:11px;color:#64748b;margin:2px 0 0 0;">Estoque de Outros Produtos</p></div>' +
+   282→      '<div style="margin-left:auto;text-align:right;font-size:10px;color:#94a3b8;">Gerado em: ' + new Date().toLocaleDateString('pt-BR') + '</div>' +
+   283→    '</div>' +
+   284→    '<table style="width:100%;border-collapse:collapse;font-size:10px;"><thead><tr style="background:#d97706;color:white;"><th style="padding:10px;text-align:left;">Produto</th><th style="padding:10px;text-align:center;">Tipo</th><th style="padding:10px;text-align:center;">Estoque</th><th style="padding:10px;text-align:center;">Min.</th><th style="padding:10px;text-align:right;">Preco</th><th style="padding:10px;text-align:center;">Status</th></tr></thead><tbody>' + rowsHtml + '</tbody></table>' +
+   285→  '</div>';
+   286→
+   287→  await renderAndDownload(html, 'Estoque_Outros_Produtos.pdf');
+   288→}
+   289→
+   290→export async function exportRomaneioPDF(settings: AppSettings, sale: SaleRecord | OtherSaleRecord, isOther: boolean) {
+   291→  const logo = getLogo(settings);
+   292→  let itemsHtml = '';
+   293→  if (!isOther) {
+   294→    const s = sale as SaleRecord;
+   295→    itemsHtml = s.items.map((i, idx) =>
+   296→      '<tr style="background-color:' + (idx % 2 === 0 ? '#fff' : '#f8fafc') + ';">' +
+   297→        '<td style="padding:10px;border-bottom:1px solid #e2e8f0;"><div style="display:flex;align-items:center;gap:8px;">' +
+   298→          (i.image ? '<img src="' + i.image + '" style="width:36px;height:36px;border-radius:8px;object-fit:cover;" />' : '') +
+   299→          '<div><div style="font-weight:bold;">' + i.name + '</div><div style="font-size:9px;color:#94a3b8;">' + i.code + '</div></div>' +
+   300→        '</div></td>' +
+   301→        '<td style="padding:10px;border-bottom:1px solid #e2e8f0;">' + i.print + ' (' + i.color + ')</td>' +
+   302→        '<td style="padding:10px;border-bottom:1px solid #e2e8f0;text-align:center;font-weight:bold;">' + i.size + '</td>' +
+   303→        '<td style="padding:10px;border-bottom:1px solid #e2e8f0;text-align:center;font-weight:bold;">' + i.qty + '</td>' +
+   304→        '<td style="padding:10px;border-bottom:1px solid #e2e8f0;text-align:right;">R$ ' + i.price.toFixed(2) + '</td>' +
+   305→        '<td style="padding:10px;border-bottom:1px solid #e2e8f0;text-align:right;font-weight:bold;">R$ ' + (i.price * i.qty).toFixed(2) + '</td>' +
+   306→      '</tr>'
+   307→    ).join('');
+   308→  } else {
+   309→    const s = sale as OtherSaleRecord;
+   310→    itemsHtml = s.items.map((i, idx) =>
+   311→      '<tr style="background-color:' + (idx % 2 === 0 ? '#fff' : '#f8fafc') + ';">' +
+   312→        '<td style="padding:10px;border-bottom:1px solid #e2e8f0;"><div style="display:flex;align-items:center;gap:8px;">' +
+   313→          (i.image ? '<img src="' + i.image + '" style="width:36px;height:36px;border-radius:8px;object-fit:cover;" />' : '') +
+   314→          '<div><div style="font-weight:bold;">' + i.name + '</div><div style="font-size:9px;color:#94a3b8;">' + i.code + '</div></div>' +
+   315→        '</div></td>' +
+   316→        '<td style="padding:10px;border-bottom:1px solid #e2e8f0;">' + i.category + '</td>' +
+   317→        '<td style="padding:10px;border-bottom:1px solid #e2e8f0;text-align:center;">' + i.unitType + '</td>' +
+   318→        '<td style="padding:10px;border-bottom:1px solid #e2e8f0;text-align:center;font-weight:bold;">' + i.qty + '</td>' +
+   319→        '<td style="padding:10px;border-bottom:1px solid #e2e8f0;text-align:right;">R$ ' + i.price.toFixed(2) + '</td>' +
+   320→        '<td style="padding:10px;border-bottom:1px solid #e2e8f0;text-align:right;font-weight:bold;">R$ ' + (i.price * i.qty).toFixed(2) + '</td>' +
+   321→      '</tr>'
+   322→    ).join('');
+   323→  }
+   324→
+   325→  const html = '<div style="font-family:sans-serif;padding:24px;border:2px solid #d97706;border-radius:16px;">' +
+   326→    '<div style="display:flex;justify-content:space-between;align-items:center;border-bottom:3px solid #d97706;padding-bottom:12px;">' +
+   327→      '<div style="display:flex;align-items:center;gap:12px;">' +
+   328→        imgToHtml(logo, 48, 48, 10) +
+   329→        '<div><h1 style="font-size:20px;font-weight:bold;margin:0;color:#1e293b;">' + settings.brandName + '</h1><p style="font-size:11px;color:#64748b;margin:2px 0 0 0;">' + settings.brandSubtitle + '</p></div>' +
+   330→      '</div>' +
+   331→      '<div style="text-align:right;"><h2 style="font-size:18px;color:#d97706;margin:0;">' + sale.id + '</h2><span style="font-size:11px;color:#64748b;">Data: ' + sale.date + '</span></div>' +
+   332→    '</div>' +
+   333→    '<div style="margin:18px 0;font-size:12px;line-height:1.8;background:#f8fafc;padding:12px;border-radius:10px;">' +
+   334→      '<strong>Cliente:</strong> ' + sale.client.name + '<br/>' +
+   335→      '<strong>WhatsApp:</strong> ' + sale.client.phone + ' | <strong>E-mail:</strong> ' + sale.client.email + '<br/>' +
+   336→      '<strong>Forma de Pagamento:</strong> ' + sale.paymentMethod +
+   337→    '</div>' +
+   338→    '<table style="width:100%;border-collapse:collapse;margin-top:12px;font-size:11px;"><thead><tr style="background-color:#d97706;color:white;">' +
+   339→      (!isOther
+   340→        ? '<th style="padding:10px;text-align:left;">Produto</th><th style="padding:10px;text-align:left;">Estampa & Cor</th><th style="padding:10px;text-align:center;">Tam.</th><th style="padding:10px;text-align:center;">Qtd.</th><th style="padding:10px;text-align:right;">Valor Unit.</th><th style="padding:10px;text-align:right;">Subtotal</th>'
+   341→        : '<th style="padding:10px;text-align:left;">Produto</th><th style="padding:10px;text-align:left;">Categoria</th><th style="padding:10px;text-align:center;">Tipo</th><th style="padding:10px;text-align:center;">Qtd.</th><th style="padding:10px;text-align:right;">Valor Unit.</th><th style="padding:10px;text-align:right;">Subtotal</th>')
+   342→      + '</tr></thead><tbody>' + itemsHtml + '</tbody></table>' +
+   343→    '<div style="margin-top:24px;text-align:right;background:linear-gradient(135deg,#fffbeb,#fef3c7);padding:16px;border-radius:12px;border:1px solid #fde68a;">' +
+   344→      '<span style="font-size:13px;color:#92400e;">Valor Total a Pagar:</span><br/>' +
+   345→      '<h2 style="font-size:28px;font-weight:bold;margin:4px 0 0 0;color:#0f172a;">R$ ' + sale.total.toFixed(2) + '</h2>' +
+   346→      '<p style="font-size:11px;color:#64748b;margin-top:6px;">Chave PIX: <strong>' + settings.pixKey + '</strong></p>' +
+   347→    '</div>' +
+   348→  '</div>';
+   349→
+   350→  await renderAndDownload(html, 'Romaneio_' + sale.id + '_' + sale.client.name.replace(/\s+/g, '_') + '.pdf');
+   351→}
+   352→
+   353→export async function exportAllRomaneiosPDF(settings: AppSettings, sales: (SaleRecord | OtherSaleRecord)[], isOther: boolean, title: string) {
+   354→  const logo = getLogo(settings);
+   355→  const salesHtml = sales.map((s) => {
+   356→    let itemsRows = '';
+   357→    if (!isOther) {
+   358→      const sale = s as SaleRecord;
+   359→      itemsRows = sale.items.map((i, idx) =>
+   360→        '<tr style="background:' + (idx % 2 === 0 ? '#fff' : '#f8fafc') + ';">' +
+   361→          '<td style="padding:6px;"><div style="display:flex;align-items:center;gap:6px;">' +
+   362→            (i.image ? '<img src="' + i.image + '" style="width:28px;height:28px;border-radius:6px;object-fit:cover;" />' : '') +
+   363→            '<span>' + i.name + '</span></div></td>' +
+   364→          '<td style="padding:6px;text-align:center;">' + i.size + '</td>' +
+   365→          '<td style="padding:6px;text-align:center;">' + i.qty + '</td>' +
+   366→          '<td style="padding:6px;text-align:right;font-weight:bold;">R$ ' + (i.price * i.qty).toFixed(2) + '</td>' +
+   367→        '</tr>'
+   368→      ).join('');
+   369→    } else {
+   370→      const sale = s as OtherSaleRecord;
+   371→      itemsRows = sale.items.map((i, idx) =>
+   372→        '<tr style="background:' + (idx % 2 === 0 ? '#fff' : '#f8fafc') + ';">' +
+   373→          '<td style="padding:6px;"><span>' + i.name + '</span></td>' +
+   374→          '<td style="padding:6px;text-align:center;">' + i.category + '</td>' +
+   375→          '<td style="padding:6px;text-align:center;">' + i.qty + '</td>' +
+   376→          '<td style="padding:6px;text-align:right;font-weight:bold;">R$ ' + (i.price * i.qty).toFixed(2) + '</td>' +
+   377→        '</tr>'
+   378→      ).join('');
+   379→    }
+   380→
+   381→    return '<div style="border:1px solid #e2e8f0;border-radius:12px;margin-bottom:16px;overflow:hidden;">' +
+   382→      '<div style="background:#f8fafc;padding:10px 14px;display:flex;justify-content:space-between;border-bottom:1px solid #e2e8f0;">' +
+   383→        '<div><span style="font-weight:bold;color:#1e293b;">' + s.id + '</span><span style="color:#64748b;margin-left:8px;">' + s.date + '</span></div>' +
+   384→        '<div style="font-weight:bold;color:#1e293b;">R$ ' + s.total.toFixed(2) + '</div>' +
+   385→      '</div>' +
+   386→      '<div style="padding:10px 14px;font-size:11px;">' +
+   387→        '<div style="margin-bottom:6px;"><strong>Cliente:</strong> ' + s.client.name + ' | ' + s.client.phone + '</div>' +
+   388→        '<div style="margin-bottom:8px;"><strong>Pagamento:</strong> ' + s.paymentMethod + '</div>' +
+   389→        '<table style="width:100%;border-collapse:collapse;font-size:10px;"><tr style="background:#f1f5f9;"><th style="padding:6px;text-align:left;">Produto</th>' +
+   390→          (!isOther ? '<th style="text-align:center;">Tam.</th>' : '<th style="text-align:center;">Cat.</th>') +
+   391→          '<th style="text-align:center;">Qtd</th><th style="text-align:right;">Subtotal</th></tr>' + itemsRows + '</table>' +
+   392→      '</div></div>';
+   393→  }).join('');
+   394→
+   395→  const html = '<div style="font-family:sans-serif;padding:24px;">' +
+   396→    '<div style="display:flex;align-items:center;gap:12px;border-bottom:3px solid #d97706;padding-bottom:12px;margin-bottom:16px;">' +
+   397→      imgToHtml(logo, 48, 48, 10) +
+   398→      '<div><h1 style="font-size:20px;font-weight:bold;margin:0;color:#1e293b;">' + settings.brandName + '</h1><p style="font-size:11px;color:#64748b;">' + title + '</p></div>' +
+   399→    '</div>' +
+   400→    '<p style="font-size:11px;color:#64748b;margin-bottom:16px;">Gerado em: ' + new Date().toLocaleDateString('pt-BR') + ' | Total: ' + sales.length + ' romaneio(s)</p>' +
+   401→    salesHtml +
+   402→  '</div>';
+   403→
+   404→  await renderAndDownload(html, title.replace(/\s+/g, '_') + '.pdf');
+   405→}
+   406→

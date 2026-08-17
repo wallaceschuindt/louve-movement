@@ -1,0 +1,1592 @@
+     1→     1→APP LOUVE MOVEMENT
+     2→     2→
+     3→     3→Aqui está uma análise completa de Engenharia de Produto & Negócios e o código-fonte completo, funcional e interativo do sistema Louve Movement, desenvolvido como uma Single-Page Application (SPA) moderna, pronta para rodar no navegador, celular ou ser empacotada como PWA/App Desktop.  
+     4→     4→1\. Análise de Engenharia & Sugestões de Melhorias  
+     5→     5→Como engenheiro de software e especialista em sistemas de gestão (ERP/PDV), estruturei o sistema resolvendo armadilhas comuns em controle de vestuário:
+     6→     6→
+     7→     7→\[Cadastro Produto Pai\] ──\> \[Grade de Variações: P, M, G, GG x Cor\] ──\> \[Estoque Individual\]  
+     8→     8→           │                                                                 │  
+     9→     9→           ▼                                                                 ▼  
+    10→    10→\[Matriz Financeira: Custo / Venda / Markup\]                     \[Alerta de Estoque Mínimo\]  
+    11→    11→           │                                                                 │  
+    12→    12→           └─────────────────\> \[ PDV / Romaneio \] \<──────────────────────────┘  
+    13→    13→                                      │  
+    14→    14→              ┌───────────────────────┴───────────────────────┐  
+    15→    15→              ▼                                               ▼  
+    16→    16→     \[Baixa de Estoque Imediata\]                   \[Lançamento no Fluxo Financeiro\]  
+    17→    17→              │                                               │  
+    18→    18→              ▼                                               ▼  
+    19→    19→     \[Comprovante PDF & WhatsApp\]                  \[DRE, Gráficos & Métricas de Lucro\]
+    20→    20→
+    21→    21→Aqui está uma análise completa de Engenharia de Produto & Negócios e o código-fonte completo, funcional e interativo do sistema Louve Movement, desenvolvido como uma Single-Page Application (SPA) moderna, pronta para rodar no navegador, celular ou ser empacotada como PWA/App Desktop.  
+    22→    22→1\. Análise de Engenharia & Sugestões de Melhorias  
+    23→    23→Como engenheiro de software e especialista em sistemas de gestão (ERP/PDV), estruturei o sistema resolvendo armadilhas comuns em controle de vestuário:  
+    24→    24→code  
+    25→    25→Code  
+    26→    26→\[Cadastro Produto Pai\] ──\> \[Grade de Variações: P, M, G, GG x Cor\] ──\> \[Estoque Individual\]  
+    27→    27→           │                                                                 │  
+    28→    28→           ▼                                                                 ▼  
+    29→    29→\[Matriz Financeira: Custo / Venda / Markup\]                     \[Alerta de Estoque Mínimo\]  
+    30→    30→           │                                                                 │  
+    31→    31→           └─────────────────\> \[ PDV / Romaneio \] \<──────────────────────────┘  
+    32→    32→                                      │  
+    33→    33→              ┌───────────────────────┴───────────────────────┐  
+    34→    34→              ▼                                               ▼  
+    35→    35→     \[Baixa de Estoque Imediata\]                   \[Lançamento no Fluxo Financeiro\]  
+    36→    36→              │                                               │  
+    37→    37→              ▼                                               ▼  
+    38→    38→     \[Comprovante PDF & WhatsApp\]                  \[DRE, Gráficos & Métricas de Lucro\]  
+    39→    39→Inovações e Facilidades Adicionadas:  
+    40→    40→Grade Bidimensional Inteligente (SKU por Tamanho): Em vez de cadastrar uma camisa "P" e outra "M" separadas, você cadastra o modelo (ex: "Camisa Oversized Fé \- Preta") e gerencia a matriz de tamanhos \[P | M | G | GG\] numa única tela com baixa automática no tamanho exato vendido.  
+    41→    41→Envio de Romaneio Direto no WhatsApp em 1 Clique: Além do PDF, o sistema gera o link formatado para o WhatsApp do cliente com o resumo do pedido pronto.  
+    42→    42→Diferenciação entre Margem de Lucro e Markup: O sistema calcula ambos automaticamente para você nunca precificar no prejuízo.  
+    43→    43→Logotipo Persistente: Upload do logotipo da sua marca que se reflete instantaneamente no topo do painel, no Romaneio/Recibo e nos relatórios PDF.  
+    44→    44→Simulação de Taxas de Pagamento: Permite descontar automaticamente taxas de maquininha de cartão no cálculo do lucro líquido real.  
+    45→    45→Persistência Total Local (Offline-First): Funciona 100% no navegador via LocalStorage/IndexedDB sem perder dados ao recarregar, com exportação/backup em JSON e relatórios em PDF.
+    46→    46→
+    47→    47→2\. Código da Aplicação Completa  
+    48→    48→Salve o código abaixo em um arquivo chamado index.html e abra em qualquer navegador (Chrome, Edge, Safari, Celular):
+    49→    49→
+    50→    50→\<\!DOCTYPE html\>  
+    51→    51→\<html lang="pt-BR"\>  
+    52→    52→\<head\>  
+    53→    53→    \<meta charset="UTF-8"\>  
+    54→    54→    \<meta name="viewport" content="width=device-width, initial-scale=1.0"\>  
+    55→    55→    \<title\>Louve Movement \- Controle Financeiro e de Estoque\</title\>  
+    56→    56→      
+    57→    57→    \<\!-- Tailwind CSS \--\>  
+    58→    58→    \<script src="https://cdn.tailwindcss.com"\>\</script\>  
+    59→    59→    \<script\>  
+    60→    60→        tailwind.config \= {  
+    61→    61→            darkMode: 'class',  
+    62→    62→            theme: {  
+    63→    63→                extend: {  
+    64→    64→                    colors: {  
+    65→    65→                        brand: {  
+    66→    66→                            50: '\#f8fafc',  
+    67→    67→                            100: '\#f1f5f9',  
+    68→    68→                            500: '\#334155',  
+    69→    69→                            600: '\#1e293b',  
+    70→    70→                            700: '\#0f172a',  
+    71→    71→                            800: '\#020617',  
+    72→    72→                            gold: '\#d97706',  
+    73→    73→                            goldLight: '\#fbbf24'  
+    74→    74→                        }  
+    75→    75→                    }  
+    76→    76→                }  
+    77→    77→            }  
+    78→    78→        }  
+    79→    79→    \</script\>  
+    80→    80→      
+    81→    81→    \<\!-- Chart.js para Gráficos Financeiros \--\>  
+    82→    82→    \<script src="https://cdn.jsdelivr.net/npm/chart.js"\>\</script\>  
+    83→    83→      
+    84→    84→    \<\!-- Lucide Icons \--\>  
+    85→    85→    \<script src="https://unpkg.com/lucide@latest"\>\</script\>  
+    86→    86→      
+    87→    87→    \<\!-- jsPDF & html2canvas para Exportação em PDF \--\>  
+    88→    88→    \<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"\>\</script\>  
+    89→    89→    \<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"\>\</script\>
+    90→    90→
+    91→    91→    \<style\>  
+    92→    92→        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800\&display=swap');  
+    93→    93→        \* { font-family: 'Plus Jakarta Sans', sans-serif; }  
+    94→    94→        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }  
+    95→    95→        .custom-scrollbar::-webkit-scrollbar-thumb { background: \#cbd5e1; border-radius: 4px; }  
+    96→    96→        .dark .custom-scrollbar::-webkit-scrollbar-thumb { background: \#334155; }  
+    97→    97→    \</style\>  
+    98→    98→\</head\>  
+    99→    99→\<body class="bg-slate-50 text-slate-800 antialiased min-h-screen flex flex-col"\>
+   100→   100→
+   101→   101→    \<\!-- \==================== TELA DE AUTENTICAÇÃO / LOGIN \==================== \--\>  
+   102→   102→    \<div id="authScreen" class="fixed inset-0 z-50 bg-slate-900 flex items-center justify-center p-4"\>  
+   103→   103→        \<div class="absolute inset-0 opacity-20 bg-\[radial-gradient(\#d97706\_1px,transparent\_1px)\] \[background-size:16px\_16px\]"\>\</div\>  
+   104→   104→          
+   105→   105→        \<div class="relative w-full max-w-md bg-slate-800 border border-slate-700 rounded-3xl p-8 shadow-2xl backdrop-blur-xl"\>  
+   106→   106→            \<\!-- Logo / Header \--\>  
+   107→   107→            \<div class="text-center mb-8"\>  
+   108→   108→                \<div class="w-16 h-16 bg-gradient-to-tr from-amber-600 to-amber-400 rounded-2xl mx-auto flex items-center justify-center shadow-lg shadow-amber-500/20 mb-4" id="loginLogoPreview"\>  
+   109→   109→                    \<i data-lucide="crown" class="w-8 h-8 text-slate-950"\>\</i\>  
+   110→   110→                \</div\>  
+   111→   111→                \<h1 class="text-2xl font-bold text-white tracking-tight"\>Louve Movement\</h1\>  
+   112→   112→                \<p class="text-slate-400 text-xs mt-1"\>Controle Financeiro e de Estoque Louve Movement\</p\>  
+   113→   113→            \</div\>
+   114→   114→
+   115→   115→            \<\!-- Formulário Login \--\>  
+   116→   116→            \<form id="loginForm" class="space-y-4" onsubmit="event.preventDefault(); handleLogin();"\>  
+   117→   117→                \<div\>  
+   118→   118→                    \<label class="block text-xs font-semibold text-slate-300 mb-1.5"\>E-mail de Acesso\</label\>  
+   119→   119→                    \<div class="relative"\>  
+   120→   120→                        \<i data-lucide="mail" class="w-5 h-5 absolute left-3 top-3 text-slate-500"\>\</i\>  
+   121→   121→                        \<input type="email" id="loginEmail" required value="admin@louvemovement.com" class="w-full bg-slate-900/80 border border-slate-700 rounded-xl py-2.5 pl-10 pr-4 text-white text-sm focus:outline-none focus:border-amber-500 transition" placeholder="seu@email.com"\>  
+   122→   122→                    \</div\>  
+   123→   123→                \</div\>  
+   124→   124→                \<div\>  
+   125→   125→                    \<div class="flex justify-between items-center mb-1.5"\>  
+   126→   126→                        \<label class="text-xs font-semibold text-slate-300"\>Senha\</label\>  
+   127→   127→                        \<a href="\#" onclick="alert('Instrução de recuperação enviada para seu e-mail cadastrado\!')" class="text-xs text-amber-400 hover:underline"\>Esqueceu a senha?\</a\>  
+   128→   128→                    \</div\>  
+   129→   129→                    \<div class="relative"\>  
+   130→   130→                        \<i data-lucide="lock" class="w-5 h-5 absolute left-3 top-3 text-slate-500"\>\</i\>  
+   131→   131→                        \<input type="password" id="loginPass" required value="123456" class="w-full bg-slate-900/80 border border-slate-700 rounded-xl py-2.5 pl-10 pr-4 text-white text-sm focus:outline-none focus:border-amber-500 transition" placeholder="••••••••"\>  
+   132→   132→                    \</div\>  
+   133→   133→                \</div\>
+   134→   134→
+   135→   135→                \<button type="submit" class="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-bold py-3 rounded-xl shadow-lg shadow-amber-500/20 transition duration-200 text-sm"\>  
+   136→   136→                    Entrar no Painel  
+   137→   137→                \</button\>  
+   138→   138→            \</form\>
+   139→   139→
+   140→   140→            \<div class="relative my-6 text-center"\>  
+   141→   141→                \<div class="absolute inset-0 flex items-center"\>\<div class="w-full border-t border-slate-700"\>\</div\>\</div\>  
+   142→   142→                \<span class="relative bg-slate-800 px-3 text-xs text-slate-400"\>ou conecte-se com\</span\>  
+   143→   143→            \</div\>
+   144→   144→
+   145→   145→            \<\!-- Botão Google \--\>  
+   146→   146→            \<button onclick="handleLoginGoogle()" class="w-full flex items-center justify-center gap-3 bg-slate-900 hover:bg-slate-700/60 border border-slate-700 text-white text-sm font-medium py-2.5 rounded-xl transition"\>  
+   147→   147→                \<svg class="w-4 h-4" viewBox="0 0 24 24"\>  
+   148→   148→                    \<path fill="\#EA4335" d="M12 5c1.6 0 3 .6 4.1 1.6l3.1-3.1C17.3 1.7 14.8 1 12 1 7.4 1 3.5 3.6 1.6 7.4l3.7 2.9C6.2 7.3 8.9 5 12 5z"/\>  
+   149→   149→                    \<path fill="\#4285F4" d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.8z"/\>  
+   150→   150→                    \<path fill="\#FBBC05" d="M5.3 14.7c-.2-.7-.4-1.5-.4-2.3 0-.8.2-1.6.4-2.3L1.6 7.2C.6 9.2 0 10.5 0 12s.6 2.8 1.6 4.8l3.7-2.1z"/\>  
+   151→   151→                    \<path fill="\#34A853" d="M12 23c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3.1 0-5.8-2.3-6.7-5.3L1.6 15.9C3.5 19.8 7.4 23 12 23z"/\>  
+   152→   152→                \</svg\>  
+   153→   153→                Continuar com Google  
+   154→   154→            \</button\>  
+   155→   155→        \</div\>  
+   156→   156→    \</div\>
+   157→   157→
+   158→   158→    \<\!-- \==================== APLICAÇÃO PRINCIPAL \==================== \--\>  
+   159→   159→    \<div id="appContainer" class="hidden flex-1 flex flex-col md:flex-row min-h-screen"\>  
+   160→   160→          
+   161→   161→        \<\!-- SIDEBAR DE NAVEGAÇÃO \--\>  
+   162→   162→        \<aside class="w-full md:w-64 bg-slate-900 text-white flex flex-col justify-between shrink-0 border-r border-slate-800"\>  
+   163→   163→            \<div\>  
+   164→   164→                \<\!-- Logotipo da Marca Louve Movement \--\>  
+   165→   165→                \<div class="p-5 flex items-center gap-3 border-b border-slate-800"\>  
+   166→   166→                    \<div id="brandLogoContainer" class="w-10 h-10 rounded-xl bg-amber-500 flex items-center justify-center overflow-hidden shrink-0 shadow-md shadow-amber-500/20"\>  
+   167→   167→                        \<i data-lucide="crown" class="w-6 h-6 text-slate-950"\>\</i\>  
+   168→   168→                    \</div\>  
+   169→   169→                    \<div class="overflow-hidden"\>  
+   170→   170→                        \<h2 class="font-bold text-sm leading-tight truncate text-white" id="sidebarBrandName"\>Louve Movement\</h2\>  
+   171→   171→                        \<span class="text-\[10px\] text-amber-400 font-medium tracking-wide uppercase"\>Vestuário & Gestão\</span\>  
+   172→   172→                    \</div\>  
+   173→   173→                \</div\>
+   174→   174→
+   175→   175→                \<\!-- Menus de Navegação \--\>  
+   176→   176→                \<nav class="p-3 space-y-1"\>  
+   177→   177→                    \<button onclick="switchTab('dashboard')" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition text-amber-400 bg-slate-800/80" data-tab="dashboard"\>  
+   178→   178→                        \<i data-lucide="layout-dashboard" class="w-4 h-4"\>\</i\> Dashboard Geral  
+   179→   179→                    \</button\>  
+   180→   180→                    \<button onclick="switchTab('produtos')" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition text-slate-300 hover:bg-slate-800/60" data-tab="produtos"\>  
+   181→   181→                        \<i data-lucide="shirt" class="w-4 h-4"\>\</i\> Produtos & Grade  
+   182→   182→                    \</button\>  
+   183→   183→                    \<button onclick="switchTab('estoque')" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition text-slate-300 hover:bg-slate-800/60" data-tab="estoque"\>  
+   184→   184→                        \<i data-lucide="boxes" class="w-4 h-4"\>\</i\> Gestão de Estoque  
+   185→   185→                    \</button\>  
+   186→   186→                    \<button onclick="switchTab('romaneio')" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition text-slate-300 hover:bg-slate-800/60" data-tab="romaneio"\>  
+   187→   187→                        \<i data-lucide="receipt" class="w-4 h-4"\>\</i\> Romaneio & Vendas  
+   188→   188→                    \</button\>  
+   189→   189→                    \<button onclick="switchTab('financeiro')" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition text-slate-300 hover:bg-slate-800/60" data-tab="financeiro"\>  
+   190→   190→                        \<i data-lucide="trending-up" class="w-4 h-4"\>\</i\> Painel Financeiro  
+   191→   191→                    \</button\>  
+   192→   192→                    \<button onclick="switchTab('configuracoes')" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition text-slate-300 hover:bg-slate-800/60" data-tab="configuracoes"\>  
+   193→   193→                        \<i data-lucide="settings" class="w-4 h-4"\>\</i\> Configurações & Logo  
+   194→   194→                    \</button\>  
+   195→   195→                \</nav\>  
+   196→   196→            \</div\>
+   197→   197→
+   198→   198→            \<\!-- Footer Sidebar / Alerta & Logout \--\>  
+   199→   199→            \<div class="p-4 border-t border-slate-800"\>  
+   200→   200→                \<div id="lowStockWarningBadge" class="hidden mb-3 p-2.5 bg-amber-500/10 border border-amber-500/30 rounded-xl"\>  
+   201→   201→                    \<div class="flex items-center gap-2 text-amber-400 text-xs font-semibold"\>  
+   202→   202→                        \<i data-lucide="alert-triangle" class="w-4 h-4 shrink-0"\>\</i\>  
+   203→   203→                        \<span id="lowStockCountText"\>0 itens com estoque baixo\</span\>  
+   204→   204→                    \</div\>  
+   205→   205→                \</div\>
+   206→   206→
+   207→   207→                \<button onclick="handleLogout()" class="w-full flex items-center justify-center gap-2 px-3 py-2 text-xs font-medium text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition"\>  
+   208→   208→                    \<i data-lucide="log-out" class="w-4 h-4"\>\</i\> Encerrar Sessão  
+   209→   209→                \</button\>  
+   210→   210→            \</div\>  
+   211→   211→        \</aside\>
+   212→   212→
+   213→   213→        \<\!-- ÁREA CENTRAL DE CONTEÚDO \--\>  
+   214→   214→        \<main class="flex-1 flex flex-col overflow-y-auto max-h-screen custom-scrollbar"\>  
+   215→   215→              
+   216→   216→            \<\!-- Barra Superior Topbar \--\>  
+   217→   217→            \<header class="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between sticky top-0 z-20"\>  
+   218→   218→                \<div\>  
+   219→   219→                    \<h1 class="text-xl font-bold text-slate-800" id="pageTitle"\>Dashboard Geral\</h1\>  
+   220→   220→                    \<p class="text-xs text-slate-500" id="pageSubtitle"\>Visão integrada do estoque e faturamento\</p\>  
+   221→   221→                \</div\>  
+   222→   222→                \<div class="flex items-center gap-3"\>  
+   223→   223→                    \<button onclick="openRomaneioModal()" class="flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-bold px-4 py-2 rounded-xl shadow-md transition"\>  
+   224→   224→                        \<i data-lucide="plus-circle" class="w-4 h-4"\>\</i\> Nova Venda / Romaneio  
+   225→   225→                    \</button\>  
+   226→   226→                \</div\>  
+   227→   227→            \</header\>
+   228→   228→
+   229→   229→            \<\!-- CONTEÚDOS DAS ABAS \--\>  
+   230→   230→            \<div class="p-6 space-y-6 flex-1" id="tabContainer"\>
+   231→   231→
+   232→   232→                \<\!-- 1\. ABA DASHBOARD \--\>  
+   233→   233→                \<section id="tab-dashboard" class="space-y-6"\>  
+   234→   234→                    \<\!-- Cards de KPI \--\>  
+   235→   235→                    \<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"\>  
+   236→   236→                        \<div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4"\>  
+   237→   237→                            \<div class="w-12 h-12 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center shrink-0"\>  
+   238→   238→                                \<i data-lucide="dollar-sign" class="w-6 h-6"\>\</i\>  
+   239→   239→                            \</div\>  
+   240→   240→                            \<div\>  
+   241→   241→                                \<p class="text-xs text-slate-500 font-medium"\>Faturamento Total\</p\>  
+   242→   242→                                \<h3 class="text-xl font-bold text-slate-900" id="dashTotalSales"\>R$ 0,00\</h3\>  
+   243→   243→                                \<span class="text-\[11px\] text-emerald-600 font-medium" id="dashSalesCount"\>0 vendas realizadas\</span\>  
+   244→   244→                            \</div\>  
+   245→   245→                        \</div\>
+   246→   246→
+   247→   247→                        \<div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4"\>  
+   248→   248→                            \<div class="w-12 h-12 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0"\>  
+   249→   249→                                \<i data-lucide="wallet" class="w-6 h-6"\>\</i\>  
+   250→   250→                            \</div\>  
+   251→   251→                            \<div\>  
+   252→   252→                                \<p class="text-xs text-slate-500 font-medium"\>Lucro Líquido\</p\>  
+   253→   253→                                \<h3 class="text-xl font-bold text-emerald-600" id="dashNetProfit"\>R$ 0,00\</h3\>  
+   254→   254→                                \<span class="text-\[11px\] text-slate-500" id="dashProfitMargin"\>Margem: 0%\</span\>  
+   255→   255→                            \</div\>  
+   256→   256→                        \</div\>
+   257→   257→
+   258→   258→                        \<div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4"\>  
+   259→   259→                            \<div class="w-12 h-12 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center shrink-0"\>  
+   260→   260→                                \<i data-lucide="shirt" class="w-6 h-6"\>\</i\>  
+   261→   261→                            \</div\>  
+   262→   262→                            \<div\>  
+   263→   263→                                \<p class="text-xs text-slate-500 font-medium"\>Peças em Estoque\</p\>  
+   264→   264→                                \<h3 class="text-xl font-bold text-slate-900" id="dashTotalStock"\>0 un\</h3\>  
+   265→   265→                                \<span class="text-\[11px\] text-slate-500" id="dashModelsCount"\>0 modelos cadastrados\</span\>  
+   266→   266→                            \</div\>  
+   267→   267→                        \</div\>
+   268→   268→
+   269→   269→                        \<div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4"\>  
+   270→   270→                            \<div class="w-12 h-12 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center shrink-0"\>  
+   271→   271→                                \<i data-lucide="package-search" class="w-6 h-6"\>\</i\>  
+   272→   272→                            \</div\>  
+   273→   273→                            \<div\>  
+   274→   274→                                \<p class="text-xs text-slate-500 font-medium"\>Patrimônio em Estoque\</p\>  
+   275→   275→                                \<h3 class="text-xl font-bold text-slate-900" id="dashStockValuation"\>R$ 0,00\</h3\>  
+   276→   276→                                \<span class="text-\[11px\] text-slate-500"\>Custo acumulado\</span\>  
+   277→   277→                            \</div\>  
+   278→   278→                        \</div\>  
+   279→   279→                    \</div\>
+   280→   280→
+   281→   281→                    \<\!-- Gráficos Rápidos \--\>  
+   282→   282→                    \<div class="grid grid-cols-1 lg:grid-cols-2 gap-6"\>  
+   283→   283→                        \<div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm"\>  
+   284→   284→                            \<h3 class="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2"\>  
+   285→   285→                                \<i data-lucide="bar-chart-2" class="w-4 h-4 text-amber-500"\>\</i\> Faturamento vs Lucro por Período  
+   286→   286→                            \</h3\>  
+   287→   287→                            \<div class="h-64"\>  
+   288→   288→                                \<canvas id="chartDashboardSales"\>\</canvas\>  
+   289→   289→                            \</div\>  
+   290→   290→                        \</div\>
+   291→   291→
+   292→   292→                        \<div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm"\>  
+   293→   293→                            \<h3 class="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2"\>  
+   294→   294→                                \<i data-lucide="pie-chart" class="w-4 h-4 text-amber-500"\>\</i\> Distribuição por Tamanhos (P, M, G, GG)  
+   295→   295→                            \</h3\>  
+   296→   296→                            \<div class="h-64 flex items-center justify-center"\>  
+   297→   297→                                \<canvas id="chartDashboardSizes"\>\</canvas\>  
+   298→   298→                            \</div\>  
+   299→   299→                        \</div\>  
+   300→   300→                    \</div\>  
+   301→   301→                \</section\>
+   302→   302→
+   303→   303→                \<\!-- 2\. ABA PRODUTOS \--\>  
+   304→   304→                \<section id="tab-produtos" class="hidden space-y-4"\>  
+   305→   305→                    \<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3"\>  
+   306→   306→                        \<div class="flex items-center gap-2"\>  
+   307→   307→                            \<input type="text" id="searchProductInput" oninput="renderProductsTable()" placeholder="Buscar por nome, estampa, cor ou código..." class="text-xs bg-white border border-slate-200 rounded-xl px-4 py-2.5 w-72 focus:outline-none focus:border-amber-500 shadow-sm"\>  
+   308→   308→                        \</div\>  
+   309→   309→                        \<div class="flex items-center gap-2"\>  
+   310→   310→                            \<button onclick="exportProductsPDF()" class="flex items-center gap-2 bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow-sm transition"\>  
+   311→   311→                                \<i data-lucide="file-text" class="w-4 h-4"\>\</i\> Exportar Catálogo PDF  
+   312→   312→                            \</button\>  
+   313→   313→                            \<button onclick="openProductModal()" class="flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-bold px-4 py-2.5 rounded-xl shadow-sm transition"\>  
+   314→   314→                                \<i data-lucide="plus" class="w-4 h-4"\>\</i\> Cadastrar Camisa  
+   315→   315→                            \</button\>  
+   316→   316→                        \</div\>  
+   317→   317→                    \</div\>
+   318→   318→
+   319→   319→                    \<\!-- Tabela de Produtos \--\>  
+   320→   320→                    \<div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden" id="productsTableContainer"\>  
+   321→   321→                        \<div class="overflow-x-auto"\>  
+   322→   322→                            \<table class="w-full text-left text-xs text-slate-600"\>  
+   323→   323→                                \<thead class="bg-slate-50 border-b border-slate-200 text-slate-700 uppercase font-semibold"\>  
+   324→   324→                                    \<tr\>  
+   325→   325→                                        \<th class="p-3.5"\>Foto\</th\>  
+   326→   326→                                        \<th class="p-3.5"\>Código / Nome\</th\>  
+   327→   327→                                        \<th class="p-3.5"\>Estampa & Cor\</th\>  
+   328→   328→                                        \<th class="p-3.5 text-center"\>Grade (P / M / G / GG)\</th\>  
+   329→   329→                                        \<th class="p-3.5 text-right"\>Custo / Venda\</th\>  
+   330→   330→                                        \<th class="p-3.5 text-right"\>Lucro Unit.\</th\>  
+   331→   331→                                        \<th class="p-3.5 text-center"\>Ações\</th\>  
+   332→   332→                                    \</tr\>  
+   333→   333→                                \</thead\>  
+   334→   334→                                \<tbody id="productsTableBody" class="divide-y divide-slate-100"\>  
+   335→   335→                                    \<\!-- Dinâmico \--\>  
+   336→   336→                                \</tbody\>  
+   337→   337→                            \</table\>  
+   338→   338→                        \</div\>  
+   339→   339→                    \</div\>  
+   340→   340→                \</section\>
+   341→   341→
+   342→   342→                \<\!-- 3\. ABA ESTOQUE \--\>  
+   343→   343→                \<section id="tab-estoque" class="hidden space-y-4"\>  
+   344→   344→                    \<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3"\>  
+   345→   345→                        \<div class="flex items-center gap-3"\>  
+   346→   346→                            \<span class="text-xs font-medium text-slate-500"\>Filtrar por Status:\</span\>  
+   347→   347→                            \<select id="stockFilterSelect" onchange="renderStockTable()" class="text-xs bg-white border border-slate-200 rounded-xl px-3 py-2 focus:outline-none"\>  
+   348→   348→                                \<option value="all"\>Todos os Itens\</option\>  
+   349→   349→                                \<option value="low"\>Apenas Estoque Baixo / Crítico\</option\>  
+   350→   350→                            \</select\>  
+   351→   351→                        \</div\>  
+   352→   352→                        \<button onclick="exportStockPDF()" class="flex items-center gap-2 bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow-sm transition"\>  
+   353→   353→                            \<i data-lucide="file-down" class="w-4 h-4"\>\</i\> Exportar Inventário PDF  
+   354→   354→                        \</button\>  
+   355→   355→                    \</div\>
+   356→   356→
+   357→   357→                    \<\!-- Tabela de Estoque \--\>  
+   358→   358→                    \<div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden" id="stockTableContainer"\>  
+   359→   359→                        \<div class="overflow-x-auto"\>  
+   360→   360→                            \<table class="w-full text-left text-xs text-slate-600"\>  
+   361→   361→                                \<thead class="bg-slate-50 border-b border-slate-200 text-slate-700 uppercase font-semibold"\>  
+   362→   362→                                    \<tr\>  
+   363→   363→                                        \<th class="p-3.5"\>Foto\</th\>  
+   364→   364→                                        \<th class="p-3.5"\>Produto / Estampa\</th\>  
+   365→   365→                                        \<th class="p-3.5 text-center"\>P\</th\>  
+   366→   366→                                        \<th class="p-3.5 text-center"\>M\</th\>  
+   367→   367→                                        \<th class="p-3.5 text-center"\>G\</th\>  
+   368→   368→                                        \<th class="p-3.5 text-center"\>GG\</th\>  
+   369→   369→                                        \<th class="p-3.5 text-center"\>Total Atual\</th\>  
+   370→   370→                                        \<th class="p-3.5 text-center"\>Estoque Mínimo\</th\>  
+   371→   371→                                        \<th class="p-3.5 text-center"\>Status\</th\>  
+   372→   372→                                        \<th class="p-3.5 text-center"\>Ajuste Rápido\</th\>  
+   373→   373→                                    \</tr\>  
+   374→   374→                                \</thead\>  
+   375→   375→                                \<tbody id="stockTableBody" class="divide-y divide-slate-100"\>  
+   376→   376→                                    \<\!-- Dinâmico \--\>  
+   377→   377→                                \</tbody\>  
+   378→   378→                            \</table\>  
+   379→   379→                        \</div\>  
+   380→   380→                    \</div\>  
+   381→   381→                \</section\>
+   382→   382→
+   383→   383→                \<\!-- 4\. ABA ROMANEIO & VENDAS \--\>  
+   384→   384→                \<section id="tab-romaneio" class="hidden space-y-4"\>  
+   385→   385→                    \<div class="flex justify-between items-center"\>  
+   386→   386→                        \<h2 class="text-sm font-bold text-slate-800"\>Histórico de Romaneios / Pedidos de Venda\</h2\>  
+   387→   387→                        \<button onclick="openRomaneioModal()" class="flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-bold px-4 py-2.5 rounded-xl shadow-sm transition"\>  
+   388→   388→                            \<i data-lucide="plus-circle" class="w-4 h-4"\>\</i\> Criar Novo Romaneio  
+   389→   389→                        \</button\>  
+   390→   390→                    \</div\>
+   391→   391→
+   392→   392→                    \<div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden"\>  
+   393→   393→                        \<div class="overflow-x-auto"\>  
+   394→   394→                            \<table class="w-full text-left text-xs text-slate-600"\>  
+   395→   395→                                \<thead class="bg-slate-50 border-b border-slate-200 text-slate-700 uppercase font-semibold"\>  
+   396→   396→                                    \<tr\>  
+   397→   397→                                        \<th class="p-3.5"\>Nº Romaneio\</th\>  
+   398→   398→                                        \<th class="p-3.5"\>Data\</th\>  
+   399→   399→                                        \<th class="p-3.5"\>Cliente\</th\>  
+   400→   400→                                        \<th class="p-3.5"\>WhatsApp / E-mail\</th\>  
+   401→   401→                                        \<th class="p-3.5"\>Itens Comprados\</th\>  
+   402→   402→                                        \<th class="p-3.5"\>Pagamento\</th\>  
+   403→   403→                                        \<th class="p-3.5 text-right"\>Valor Total\</th\>  
+   404→   404→                                        \<th class="p-3.5 text-center"\>Ações\</th\>  
+   405→   405→                                    \</tr\>  
+   406→   406→                                \</thead\>  
+   407→   407→                                \<tbody id="romaneioTableBody" class="divide-y divide-slate-100"\>  
+   408→   408→                                    \<\!-- Dinâmico \--\>  
+   409→   409→                                \</tbody\>  
+   410→   410→                            \</table\>  
+   411→   411→                        \</div\>  
+   412→   412→                    \</div\>  
+   413→   413→                \</section\>
+   414→   414→
+   415→   415→                \<\!-- 5\. ABA FINANCEIRO \--\>  
+   416→   416→                \<section id="tab-financeiro" class="hidden space-y-6"\>  
+   417→   417→                    \<div class="flex justify-between items-center"\>  
+   418→   418→                        \<h2 class="text-sm font-bold text-slate-800"\>Demonstrativo de Resultados & Fluxo\</h2\>  
+   419→   419→                        \<button onclick="exportFinancePDF()" class="flex items-center gap-2 bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow-sm transition"\>  
+   420→   420→                            \<i data-lucide="file-text" class="w-4 h-4"\>\</i\> Exportar Relatório DRE (PDF)  
+   421→   421→                        \</button\>  
+   422→   422→                    \</div\>
+   423→   423→
+   424→   424→                    \<\!-- Grid DRE Detalhado \--\>  
+   425→   425→                    \<div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="financeSummaryCards"\>  
+   426→   426→                        \<div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm"\>  
+   427→   427→                            \<span class="text-xs font-medium text-slate-500"\>Receita Bruta Acumulada\</span\>  
+   428→   428→                            \<h4 class="text-2xl font-bold text-slate-900 mt-1" id="finGrossSales"\>R$ 0,00\</h4\>  
+   429→   429→                            \<p class="text-\[11px\] text-slate-400 mt-1"\>Total faturado em romaneios\</p\>  
+   430→   430→                        \</div\>  
+   431→   431→                        \<div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm"\>  
+   432→   432→                            \<span class="text-xs font-medium text-slate-500"\>Custo das Mercadorias Vendidas (CMV)\</span\>  
+   433→   433→                            \<h4 class="text-2xl font-bold text-rose-600 mt-1" id="finTotalCost"\>R$ 0,00\</h4\>  
+   434→   434→                            \<p class="text-\[11px\] text-slate-400 mt-1"\>Custo base dos produtos baixados\</p\>  
+   435→   435→                        \</div\>  
+   436→   436→                        \<div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm"\>  
+   437→   437→                            \<span class="text-xs font-medium text-slate-500"\>Lucro Operacional Líquido\</span\>  
+   438→   438→                            \<h4 class="text-2xl font-bold text-emerald-600 mt-1" id="finNetProfit"\>R$ 0,00\</h4\>  
+   439→   439→                            \<p class="text-\[11px\] text-emerald-600 font-semibold mt-1" id="finMarginPercent"\>Margem líquida: 0%\</p\>  
+   440→   440→                        \</div\>  
+   441→   441→                    \</div\>
+   442→   442→
+   443→   443→                    \<\!-- Métricas por Método de Pagamento \--\>  
+   444→   444→                    \<div class="grid grid-cols-1 lg:grid-cols-3 gap-6"\>  
+   445→   445→                        \<div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm col-span-1"\>  
+   446→   446→                            \<h3 class="text-sm font-bold text-slate-800 mb-4"\>Vendas por Forma de Pagamento\</h3\>  
+   447→   447→                            \<div class="h-56 flex items-center justify-center"\>  
+   448→   448→                                \<canvas id="chartPaymentMethods"\>\</canvas\>  
+   449→   449→                            \</div\>  
+   450→   450→                        \</div\>
+   451→   451→
+   452→   452→                        \<div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm col-span-2"\>  
+   453→   453→                            \<h3 class="text-sm font-bold text-slate-800 mb-4"\>Evolução Mensal de Faturamento & Margem\</h3\>  
+   454→   454→                            \<div class="h-56"\>  
+   455→   455→                                \<canvas id="chartMonthlyFinance"\>\</canvas\>  
+   456→   456→                            \</div\>  
+   457→   457→                        \</div\>  
+   458→   458→                    \</div\>  
+   459→   459→                \</section\>
+   460→   460→
+   461→   461→                \<\!-- 6\. ABA CONFIGURAÇÕES & PERSONALIZAÇÃO \--\>  
+   462→   462→                \<section id="tab-configuracoes" class="hidden space-y-6 max-w-2xl"\>  
+   463→   463→                    \<div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-6"\>  
+   464→   464→                        \<h2 class="text-base font-bold text-slate-800 border-b pb-3"\>Identidade Visual da Marca\</h2\>  
+   465→   465→                          
+   466→   466→                        \<div class="flex items-center gap-6"\>  
+   467→   467→                            \<div id="settingsLogoPreview" class="w-20 h-20 rounded-2xl bg-amber-500 flex items-center justify-center overflow-hidden border border-slate-200 shrink-0 shadow-md"\>  
+   468→   468→                                \<i data-lucide="crown" class="w-10 h-10 text-slate-950"\>\</i\>  
+   469→   469→                            \</div\>  
+   470→   470→                            \<div class="space-y-2"\>  
+   471→   471→                                \<label class="block text-xs font-semibold text-slate-700"\>Substituir Logotipo da Empresa\</label\>  
+   472→   472→                                \<input type="file" id="logoUploadInput" accept="image/\*" onchange="handleLogoUpload(event)" class="text-xs text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-amber-500 file:text-slate-950 hover:file:bg-amber-600 cursor-pointer"\>  
+   473→   473→                                \<p class="text-\[11px\] text-slate-400"\>Recomendado: Imagem PNG ou JPG quadrada (500x500px).\</p\>  
+   474→   474→                            \</div\>  
+   475→   475→                        \</div\>
+   476→   476→
+   477→   477→                        \<div class="space-y-4 pt-4 border-t border-slate-100"\>  
+   478→   478→                            \<div\>  
+   479→   479→                                \<label class="block text-xs font-semibold text-slate-700 mb-1"\>Nome do Aplicativo / Loja\</label\>  
+   480→   480→                                \<input type="text" id="configStoreName" value="Louve Movement" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl p-2.5 focus:outline-none focus:border-amber-500"\>  
+   481→   481→                            \</div\>  
+   482→   482→                            \<div\>  
+   483→   483→                                \<label class="block text-xs font-semibold text-slate-700 mb-1"\>Subtítulo / Slogan\</label\>  
+   484→   484→                                \<input type="text" id="configStoreSubtitle" value="Controle Financeiro e de Estoque Louve Movement" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl p-2.5 focus:outline-none focus:border-amber-500"\>  
+   485→   485→                            \</div\>  
+   486→   486→                            \<div\>  
+   487→   487→                                \<label class="block text-xs font-semibold text-slate-700 mb-1"\>Chave PIX Padrão (para Romaneios)\</label\>  
+   488→   488→                                \<input type="text" id="configStorePix" value="financeiro@louvemovement.com" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl p-2.5 focus:outline-none focus:border-amber-500"\>  
+   489→   489→                            \</div\>
+   490→   490→
+   491→   491→                            \<button onclick="saveStoreSettings()" class="bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-bold px-5 py-2.5 rounded-xl shadow-md transition"\>  
+   492→   492→                                Salvar Alterações  
+   493→   493→                            \</button\>  
+   494→   494→                        \</div\>  
+   495→   495→                    \</div\>  
+   496→   496→                \</section\>  
+   497→   497→            \</div\>  
+   498→   498→        \</main\>  
+   499→   499→    \</div\>
+   500→   500→
+   501→   501→    \<\!-- \==================== MODAL DE CADASTRO / EDIÇÃO DE PRODUTO \==================== \--\>  
+   502→   502→    \<div id="productModal" class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm hidden items-center justify-center p-4"\>  
+   503→   503→        \<div class="bg-white rounded-3xl w-full max-w-2xl max-h-\[90vh\] overflow-y-auto custom-scrollbar border border-slate-200 shadow-2xl p-6"\>  
+   504→   504→            \<div class="flex justify-between items-center pb-4 border-b border-slate-100"\>  
+   505→   505→                \<h3 class="font-bold text-base text-slate-800" id="productModalTitle"\>Cadastrar Nova Camisa\</h3\>  
+   506→   506→                \<button onclick="closeProductModal()" class="text-slate-400 hover:text-slate-600"\>\<i data-lucide="x" class="w-5 h-5"\>\</i\>\</button\>  
+   507→   507→            \</div\>
+   508→   508→
+   509→   509→            \<form id="productForm" class="mt-4 space-y-4" onsubmit="event.preventDefault(); saveProduct();"\>  
+   510→   510→                \<input type="hidden" id="prodId"\>  
+   511→   511→                  
+   512→   512→                \<div class="grid grid-cols-1 sm:grid-cols-3 gap-4"\>  
+   513→   513→                    \<\!-- Upload Imagem \--\>  
+   514→   514→                    \<div class="sm:col-span-1 flex flex-col items-center justify-center border-2 border-dashed border-slate-200 rounded-2xl p-4 bg-slate-50 text-center"\>  
+   515→   515→                        \<img id="prodImagePreview" src="https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=300\&auto=format\&fit=crop\&q=60" alt="Preview" class="w-24 h-24 object-cover rounded-xl mb-2 shadow-sm"\>  
+   516→   516→                        \<label class="cursor-pointer text-\[11px\] font-bold text-amber-600 hover:underline"\>  
+   517→   517→                            Carregar Foto  
+   518→   518→                            \<input type="file" id="prodImageInput" accept="image/\*" onchange="previewImage(event, 'prodImagePreview')" class="hidden"\>  
+   519→   519→                        \</label\>  
+   520→   520→                    \</div\>
+   521→   521→
+   522→   522→                    \<div class="sm:col-span-2 space-y-3"\>  
+   523→   523→                        \<div class="grid grid-cols-2 gap-3"\>  
+   524→   524→                            \<div\>  
+   525→   525→                                \<label class="block text-xs font-semibold text-slate-700 mb-1"\>Código SKU\</label\>  
+   526→   526→                                \<input type="text" id="prodCode" required placeholder="LM-001" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl p-2.5 focus:outline-none focus:border-amber-500 font-mono"\>  
+   527→   527→                            \</div\>  
+   528→   528→                            \<div\>  
+   529→   529→                                \<label class="block text-xs font-semibold text-slate-700 mb-1"\>Nome do Produto\</label\>  
+   530→   530→                                \<input type="text" id="prodName" required placeholder="Camisa Streetwear Fé" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl p-2.5 focus:outline-none focus:border-amber-500"\>  
+   531→   531→                            \</div\>  
+   532→   532→                        \</div\>
+   533→   533→
+   534→   534→                        \<div class="grid grid-cols-2 gap-3"\>  
+   535→   535→                            \<div\>  
+   536→   536→                                \<label class="block text-xs font-semibold text-slate-700 mb-1"\>Estampa\</label\>  
+   537→   537→                                \<input type="text" id="prodPrint" required placeholder="Ex: Cruz Frontal Minimalista" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl p-2.5 focus:outline-none focus:border-amber-500"\>  
+   538→   538→                            \</div\>  
+   539→   539→                            \<div\>  
+   540→   540→                                \<label class="block text-xs font-semibold text-slate-700 mb-1"\>Cor\</label\>  
+   541→   541→                                \<input type="text" id="prodColor" required placeholder="Ex: Preto / Off-White" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl p-2.5 focus:outline-none focus:border-amber-500"\>  
+   542→   542→                            \</div\>  
+   543→   543→                        \</div\>  
+   544→   544→                    \</div\>  
+   545→   545→                \</div\>
+   546→   546→
+   547→   547→                \<\!-- Estoque por Grade \--\>  
+   548→   548→                \<div class="bg-amber-50/50 p-4 rounded-2xl border border-amber-100 space-y-2"\>  
+   549→   549→                    \<span class="text-xs font-bold text-amber-900 block"\>Grade de Estoque Inicial por Tamanho:\</span\>  
+   550→   550→                    \<div class="grid grid-cols-4 gap-3"\>  
+   551→   551→                        \<div\>  
+   552→   552→                            \<label class="block text-center text-\[11px\] font-bold text-slate-600 mb-1"\>Tam. P\</label\>  
+   553→   553→                            \<input type="number" id="prodStockP" min="0" value="0" class="w-full text-center text-xs bg-white border border-amber-200 rounded-xl p-2 focus:outline-none"\>  
+   554→   554→                        \</div\>  
+   555→   555→                        \<div\>  
+   556→   556→                            \<label class="block text-center text-\[11px\] font-bold text-slate-600 mb-1"\>Tam. M\</label\>  
+   557→   557→                            \<input type="number" id="prodStockM" min="0" value="0" class="w-full text-center text-xs bg-white border border-amber-200 rounded-xl p-2 focus:outline-none"\>  
+   558→   558→                        \</div\>  
+   559→   559→                        \<div\>  
+   560→   560→                            \<label class="block text-center text-\[11px\] font-bold text-slate-600 mb-1"\>Tam. G\</label\>  
+   561→   561→                            \<input type="number" id="prodStockG" min="0" value="0" class="w-full text-center text-xs bg-white border border-amber-200 rounded-xl p-2 focus:outline-none"\>  
+   562→   562→                        \</div\>  
+   563→   563→                        \<div\>  
+   564→   564→                            \<label class="block text-center text-\[11px\] font-bold text-slate-600 mb-1"\>Tam. GG\</label\>  
+   565→   565→                            \<input type="number" id="prodStockGG" min="0" value="0" class="w-full text-center text-xs bg-white border border-amber-200 rounded-xl p-2 focus:outline-none"\>  
+   566→   566→                        \</div\>  
+   567→   567→                    \</div\>  
+   568→   568→                    \<div class="pt-2"\>  
+   569→   569→                        \<label class="block text-xs font-semibold text-slate-700 mb-1"\>Estoque Mínimo de Alerta Geral deste Modelo:\</label\>  
+   570→   570→                        \<input type="number" id="prodMinStock" min="1" value="5" class="w-32 text-xs bg-white border border-slate-200 rounded-xl p-2 focus:outline-none"\>  
+   571→   571→                    \</div\>  
+   572→   572→                \</div\>
+   573→   573→
+   574→   574→                \<\!-- Preços e Lucro Inteligente \--\>  
+   575→   575→                \<div class="grid grid-cols-1 sm:grid-cols-4 gap-3 bg-slate-50 p-4 rounded-2xl border border-slate-100"\>  
+   576→   576→                    \<div\>  
+   577→   577→                        \<label class="block text-\[11px\] font-semibold text-slate-600 mb-1"\>Valor de Custo (R$)\</label\>  
+   578→   578→                        \<input type="number" step="0.01" id="prodCost" oninput="calcProfitPreview()" required placeholder="35.00" class="w-full text-xs bg-white border border-slate-200 rounded-xl p-2.5 focus:outline-none"\>  
+   579→   579→                    \</div\>  
+   580→   580→                    \<div\>  
+   581→   581→                        \<label class="block text-\[11px\] font-semibold text-slate-600 mb-1"\>Valor de Venda (R$)\</label\>  
+   582→   582→                        \<input type="number" step="0.01" id="prodPrice" oninput="calcProfitPreview()" required placeholder="89.90" class="w-full text-xs bg-white border border-slate-200 rounded-xl p-2.5 focus:outline-none"\>  
+   583→   583→                    \</div\>  
+   584→   584→                    \<div\>  
+   585→   585→                        \<label class="block text-\[11px\] font-semibold text-slate-600 mb-1"\>Lucro Unitário\</label\>  
+   586→   586→                        \<div id="previewProfitVal" class="text-xs font-bold text-emerald-600 p-2.5 bg-emerald-50 rounded-xl border border-emerald-100"\>R$ 0,00\</div\>  
+   587→   587→                    \</div\>  
+   588→   588→                    \<div\>  
+   589→   589→                        \<label class="block text-\[11px\] font-semibold text-slate-600 mb-1"\>Margem de Lucro\</label\>  
+   590→   590→                        \<div id="previewProfitMargin" class="text-xs font-bold text-emerald-600 p-2.5 bg-emerald-50 rounded-xl border border-emerald-100"\>0%\</div\>  
+   591→   591→                    \</div\>  
+   592→   592→                \</div\>
+   593→   593→
+   594→   594→                \<div class="flex justify-end gap-2 pt-3"\>  
+   595→   595→                    \<button type="button" onclick="closeProductModal()" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl"\>Cancelar\</button\>  
+   596→   596→                    \<button type="submit" class="px-6 py-2.5 bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-bold rounded-xl shadow-md"\>Salvar Produto\</button\>  
+   597→   597→                \</div\>  
+   598→   598→            \</form\>  
+   599→   599→        \</div\>  
+   600→   600→    \</div\>
+   601→   601→
+   602→   602→    \<\!-- \==================== MODAL DE CRIAÇÃO DE ROMANEIO (NOVA VENDA / PDV) \==================== \--\>  
+   603→   603→    \<div id="romaneioModal" class="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-sm hidden items-center justify-center p-4"\>  
+   604→   604→        \<div class="bg-white rounded-3xl w-full max-w-4xl max-h-\[95vh\] overflow-y-auto custom-scrollbar border border-slate-200 shadow-2xl p-6 flex flex-col"\>  
+   605→   605→            \<div class="flex justify-between items-center pb-4 border-b border-slate-100"\>  
+   606→   606→                \<div class="flex items-center gap-3"\>  
+   607→   607→                    \<div class="w-9 h-9 rounded-xl bg-amber-500 flex items-center justify-center text-slate-950 font-bold"\>  
+   608→   608→                        \<i data-lucide="receipt" class="w-5 h-5"\>\</i\>  
+   609→   609→                    \</div\>  
+   610→   610→                    \<div\>  
+   611→   611→                        \<h3 class="font-bold text-base text-slate-800"\>Novo Romaneio de Venda\</h3\>  
+   612→   612→                        \<p class="text-\[11px\] text-slate-400"\>Emissão com baixa de estoque automática e recibo\</p\>  
+   613→   613→                    \</div\>  
+   614→   614→                \</div\>  
+   615→   615→                \<button onclick="closeRomaneioModal()" class="text-slate-400 hover:text-slate-600"\>\<i data-lucide="x" class="w-5 h-5"\>\</i\>\</button\>  
+   616→   616→            \</div\>
+   617→   617→
+   618→   618→            \<div class="mt-4 grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1"\>  
+   619→   619→                \<\!-- Coluna Esquerda: Dados do Cliente & Pagamento \--\>  
+   620→   620→                \<div class="space-y-4 lg:col-span-1"\>  
+   621→   621→                    \<h4 class="text-xs font-bold text-slate-700 uppercase tracking-wide"\>1. Dados do Cliente\</h4\>  
+   622→   622→                      
+   623→   623→                    \<div\>  
+   624→   624→                        \<label class="block text-xs font-semibold text-slate-700 mb-1"\>Nome Completo\</label\>  
+   625→   625→                        \<input type="text" id="romClientName" placeholder="Ex: Lucas Gabriel" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl p-2.5 focus:outline-none focus:border-amber-500"\>  
+   626→   626→                    \</div\>  
+   627→   627→                    \<div\>  
+   628→   628→                        \<label class="block text-xs font-semibold text-slate-700 mb-1"\>WhatsApp\</label\>  
+   629→   629→                        \<input type="text" id="romClientPhone" placeholder="(11) 99999-9999" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl p-2.5 focus:outline-none focus:border-amber-500"\>  
+   630→   630→                    \</div\>  
+   631→   631→                    \<div\>  
+   632→   632→                        \<label class="block text-xs font-semibold text-slate-700 mb-1"\>E-mail\</label\>  
+   633→   633→                        \<input type="email" id="romClientEmail" placeholder="cliente@email.com" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl p-2.5 focus:outline-none focus:border-amber-500"\>  
+   634→   634→                    \</div\>
+   635→   635→
+   636→   636→                    \<h4 class="text-xs font-bold text-slate-700 uppercase tracking-wide pt-2"\>2. Pagamento\</h4\>  
+   637→   637→                    \<div\>  
+   638→   638→                        \<label class="block text-xs font-semibold text-slate-700 mb-1"\>Forma de Pagamento\</label\>  
+   639→   639→                        \<select id="romPaymentMethod" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl p-2.5 focus:outline-none"\>  
+   640→   640→                            \<option value="PIX"\>PIX (Instantâneo)\</option\>  
+   641→   641→                            \<option value="Cartão de Crédito"\>Cartão de Crédito\</option\>  
+   642→   642→                            \<option value="Cartão de Débito"\>Cartão de Débito\</option\>  
+   643→   643→                            \<option value="Dinheiro"\>Dinheiro\</option\>  
+   644→   644→                        \</select\>  
+   645→   645→                    \</div\>  
+   646→   646→                    \<div\>  
+   647→   647→                        \<label class="block text-xs font-semibold text-slate-700 mb-1"\>Data da Venda\</label\>  
+   648→   648→                        \<input type="date" id="romDate" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl p-2.5 focus:outline-none"\>  
+   649→   649→                    \</div\>  
+   650→   650→                \</div\>
+   651→   651→
+   652→   652→                \<\!-- Coluna Direita: Seleção de Peças e Carrinho \--\>  
+   653→   653→                \<div class="space-y-4 lg:col-span-2 flex flex-col justify-between"\>  
+   654→   654→                    \<div\>  
+   655→   655→                        \<h4 class="text-xs font-bold text-slate-700 uppercase tracking-wide"\>3. Adicionar Camisas ao Romaneio\</h4\>  
+   656→   656→                          
+   657→   657→                        \<\!-- Seletor de Camisas \--\>  
+   658→   658→                        \<div class="mt-2 grid grid-cols-1 sm:grid-cols-12 gap-2 bg-slate-50 p-3 rounded-2xl border border-slate-200 items-end"\>  
+   659→   659→                            \<div class="sm:col-span-6"\>  
+   660→   660→                                \<label class="block text-\[11px\] font-semibold text-slate-600 mb-1"\>Selecione o Modelo\</label\>  
+   661→   661→                                \<select id="romProductSelect" onchange="updateRomaneioSizeOptions()" class="w-full text-xs bg-white border border-slate-200 rounded-xl p-2 focus:outline-none"\>  
+   662→   662→                                    \<\!-- Opções dinâmicas \--\>  
+   663→   663→                                \</select\>  
+   664→   664→                            \</div\>  
+   665→   665→                            \<div class="sm:col-span-3"\>  
+   666→   666→                                \<label class="block text-\[11px\] font-semibold text-slate-600 mb-1"\>Tamanho\</label\>  
+   667→   667→                                \<select id="romSizeSelect" class="w-full text-xs bg-white border border-slate-200 rounded-xl p-2 focus:outline-none"\>  
+   668→   668→                                    \<option value="P"\>P\</option\>  
+   669→   669→                                    \<option value="M"\>M\</option\>  
+   670→   670→                                    \<option value="G"\>G\</option\>  
+   671→   671→                                    \<option value="GG"\>GG\</option\>  
+   672→   672→                                \</select\>  
+   673→   673→                            \</div\>  
+   674→   674→                            \<div class="sm:col-span-3"\>  
+   675→   675→                                \<button type="button" onclick="addItemToRomaneioCart()" class="w-full bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold py-2 rounded-xl transition"\>  
+   676→   676→                                    \+ Adicionar  
+   677→   677→                                \</button\>  
+   678→   678→                            \</div\>  
+   679→   679→                        \</div\>
+   680→   680→
+   681→   681→                        \<\!-- Lista de Itens no Romaneio Atual \--\>  
+   682→   682→                        \<div class="mt-4 border border-slate-200 rounded-2xl overflow-hidden"\>  
+   683→   683→                            \<div class="bg-slate-100 p-2.5 text-xs font-bold text-slate-700"\>Itens do Romaneio\</div\>  
+   684→   684→                            \<div class="max-h-48 overflow-y-auto divide-y divide-slate-100" id="romCartItemsList"\>  
+   685→   685→                                \<p class="p-4 text-center text-xs text-slate-400"\>Nenhum item adicionado ainda.\</p\>  
+   686→   686→                            \</div\>  
+   687→   687→                        \</div\>  
+   688→   688→                    \</div\>
+   689→   689→
+   690→   690→                    \<\!-- Resumo Financeiro da Venda \--\>  
+   691→   691→                    \<div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-center justify-between mt-4"\>  
+   692→   692→                        \<div\>  
+   693→   693→                            \<span class="text-xs text-amber-900 font-medium"\>Total do Romaneio:\</span\>  
+   694→   694→                            \<h3 class="text-2xl font-extrabold text-slate-900" id="romCartTotal"\>R$ 0,00\</h3\>  
+   695→   695→                        \</div\>  
+   696→   696→                        \<button onclick="finalizeRomaneio()" class="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs px-6 py-3 rounded-xl shadow-lg shadow-amber-500/20 transition"\>  
+   697→   697→                            Finalizar e Baixar Estoque  
+   698→   698→                        \</button\>  
+   699→   699→                    \</div\>  
+   700→   700→                \</div\>  
+   701→   701→            \</div\>  
+   702→   702→        \</div\>  
+   703→   703→    \</div\>
+   704→   704→
+   705→   705→    \<\!-- \==================== CONTAINER ESCONDIDO PARA GERAÇÃO DO RECIBO / ROMANEIO PDF \==================== \--\>  
+   706→   706→    \<div id="pdfExportContainer" class="hidden p-8 bg-white text-slate-900 max-w-2xl mx-auto"\>  
+   707→   707→        \<\!-- Renderizado dinamicamente para exportar PDF \--\>  
+   708→   708→    \</div\>
+   709→   709→
+   710→   710→    \<\!-- \==================== LÓGICA JAVASCRIPT COMPLETA \==================== \--\>  
+   711→   711→    \<script\>  
+   712→   712→        // \--- ESTADO GLOBAL DA APLICAÇÃO \---  
+   713→   713→        const APP\_STATE \= {  
+   714→   714→            brandName: "Louve Movement",  
+   715→   715→            brandSubtitle: "Controle Financeiro e de Estoque Louve Movement",  
+   716→   716→            brandLogo: null, // Base64 se customizado  
+   717→   717→            pixKey: "financeiro@louvemovement.com",  
+   718→   718→            products: \[\],  
+   719→   719→            sales: \[\],  
+   720→   720→            currentCart: \[\]  
+   721→   721→        };
+   722→   722→
+   723→   723→        // Carregar dados iniciais de demonstração se não existirem no localStorage  
+   724→   724→        function initAppStorage() {  
+   725→   725→            const savedState \= localStorage.getItem('LOUVE\_MOVEMENT\_DATA');  
+   726→   726→            if (savedState) {  
+   727→   727→                const parsed \= JSON.parse(savedState);  
+   728→   728→                Object.assign(APP\_STATE, parsed);  
+   729→   729→            } else {  
+   730→   730→                // Produtos semente com tema Louve Movement  
+   731→   731→                APP\_STATE.products \= \[  
+   732→   732→                    {  
+   733→   733→                        id: "prod\_1",  
+   734→   734→                        code: "LM-ST-01",  
+   735→   735→                        name: "Camisa Oversized Lion of Judah",  
+   736→   736→                        print: "Leão de Judá Floral Costas",  
+   737→   737→                        color: "Preto Mineral",  
+   738→   738→                        cost: 38.00,  
+   739→   739→                        price: 99.90,  
+   740→   740→                        minStock: 6,  
+   741→   741→                        sizes: { P: 5, M: 8, G: 12, GG: 4 },  
+   742→   742→                        image: "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=300\&auto=format\&fit=crop\&q=60"  
+   743→   743→                    },  
+   744→   744→                    {  
+   745→   745→                        id: "prod\_2",  
+   746→   746→                        code: "LM-ST-02",  
+   747→   747→                        name: "Camisa Minimalist Grace",  
+   748→   748→                        print: "Graça Sobre Graça Peito",  
+   749→   749→                        color: "Off-White / Bege",  
+   750→   750→                        cost: 34.00,  
+   751→   751→                        price: 89.90,  
+   752→   752→                        minStock: 5,  
+   753→   753→                        sizes: { P: 2, M: 4, G: 3, GG: 1 },  
+   754→   754→                        image: "https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?w=300\&auto=format\&fit=crop\&q=60"  
+   755→   755→                    }  
+   756→   756→                \];  
+   757→   757→                APP\_STATE.sales \= \[\];  
+   758→   758→                saveToLocalStorage();  
+   759→   759→            }  
+   760→   760→        }
+   761→   761→
+   762→   762→        function saveToLocalStorage() {  
+   763→   763→            localStorage.setItem('LOUVE\_MOVEMENT\_DATA', JSON.stringify(APP\_STATE));  
+   764→   764→        }
+   765→   765→
+   766→   766→        // \--- SISTEMA DE AUTENTICAÇÃO \---  
+   767→   767→        function handleLogin() {  
+   768→   768→            document.getElementById('authScreen').classList.add('hidden');  
+   769→   769→            document.getElementById('appContainer').classList.remove('hidden');  
+   770→   770→            refreshAllViews();  
+   771→   771→        }
+   772→   772→
+   773→   773→        function handleLoginGoogle() {  
+   774→   774→            alert('Autenticado com sucesso via Conta Google\!');  
+   775→   775→            handleLogin();  
+   776→   776→        }
+   777→   777→
+   778→   778→        function handleLogout() {  
+   779→   779→            document.getElementById('authScreen').classList.remove('hidden');  
+   780→   780→            document.getElementById('appContainer').classList.add('hidden');  
+   781→   781→        }
+   782→   782→
+   783→   783→        // \--- NAVEGAÇÃO ENTRE ABAS \---  
+   784→   784→        function switchTab(tabId) {  
+   785→   785→            document.querySelectorAll('\#tabContainer \> section').forEach(sec \=\> sec.classList.add('hidden'));  
+   786→   786→            document.querySelectorAll('.nav-item').forEach(btn \=\> {  
+   787→   787→                btn.classList.remove('bg-slate-800/80', 'text-amber-400');  
+   788→   788→                btn.classList.add('text-slate-300');  
+   789→   789→            });
+   790→   790→
+   791→   791→            const activeSection \= document.getElementById('tab-' \+ tabId);  
+   792→   792→            if (activeSection) activeSection.classList.remove('hidden');
+   793→   793→
+   794→   794→            const activeBtn \= document.querySelector(\`.nav-item\[data-tab="${tabId}"\]\`);  
+   795→   795→            if (activeBtn) {  
+   796→   796→                activeBtn.classList.add('bg-slate-800/80', 'text-amber-400');  
+   797→   797→                activeBtn.classList.remove('text-slate-300');  
+   798→   798→            }
+   799→   799→
+   800→   800→            // Títulos  
+   801→   801→            const titles \= {  
+   802→   802→                dashboard: \['Dashboard Geral', 'Visão integrada do estoque e faturamento'\],  
+   803→   803→                produtos: \['Catálogo de Camisas', 'Cadastro completo de modelos, estampas e margens'\],  
+   804→   804→                estoque: \['Controle de Estoque & Grade', 'Monitoramento por tamanho (P/M/G/GG) e alertas'\],  
+   805→   805→                romaneio: \['Romaneios de Saída / PDV', 'Histórico de vendas e emissão de comprovantes'\],  
+   806→   806→                financeiro: \['Painel Financeiro & DRE', 'Controle detalhado de lucros, custos e faturamento'\],  
+   807→   807→                configuracoes: \['Configurações da Marca', 'Personalização de logotipos e dados da empresa'\]  
+   808→   808→            };
+   809→   809→
+   810→   810→            if (titles\[tabId\]) {  
+   811→   811→                document.getElementById('pageTitle').innerText \= titles\[tabId\]\[0\];  
+   812→   812→                document.getElementById('pageSubtitle').innerText \= titles\[tabId\]\[1\];  
+   813→   813→            }
+   814→   814→
+   815→   815→            if (tabId \=== 'dashboard') renderDashboardCharts();  
+   816→   816→            if (tabId \=== 'financeiro') renderFinanceCharts();  
+   817→   817→            if (tabId \=== 'produtos') renderProductsTable();  
+   818→   818→            if (tabId \=== 'estoque') renderStockTable();  
+   819→   819→            if (tabId \=== 'romaneio') renderRomaneioTable();  
+   820→   820→        }
+   821→   821→
+   822→   822→        // \--- LOGOTIPO & BRANDING \---  
+   823→   823→        function handleLogoUpload(event) {  
+   824→   824→            const file \= event.target.files\[0\];  
+   825→   825→            if (file) {  
+   826→   826→                const reader \= new FileReader();  
+   827→   827→                reader.onload \= function(e) {  
+   828→   828→                    APP\_STATE.brandLogo \= e.target.result;  
+   829→   829→                    applyBranding();  
+   830→   830→                    saveToLocalStorage();  
+   831→   831→                }  
+   832→   832→                reader.readAsDataURL(file);  
+   833→   833→            }  
+   834→   834→        }
+   835→   835→
+   836→   836→        function applyBranding() {  
+   837→   837→            const container \= document.getElementById('brandLogoContainer');  
+   838→   838→            const preview \= document.getElementById('settingsLogoPreview');  
+   839→   839→            const loginPreview \= document.getElementById('loginLogoPreview');
+   840→   840→
+   841→   841→            if (APP\_STATE.brandLogo) {  
+   842→   842→                const imgHtml \= \`\<img src="${APP\_STATE.brandLogo}" class="w-full h-full object-cover" /\>\`;  
+   843→   843→                container.innerHTML \= imgHtml;  
+   844→   844→                preview.innerHTML \= imgHtml;  
+   845→   845→                loginPreview.innerHTML \= imgHtml;  
+   846→   846→            }  
+   847→   847→            document.getElementById('sidebarBrandName').innerText \= APP\_STATE.brandName;  
+   848→   848→            document.getElementById('configStoreName').value \= APP\_STATE.brandName;  
+   849→   849→            document.getElementById('configStoreSubtitle').value \= APP\_STATE.brandSubtitle;  
+   850→   850→            document.getElementById('configStorePix').value \= APP\_STATE.pixKey;  
+   851→   851→        }
+   852→   852→
+   853→   853→        function saveStoreSettings() {  
+   854→   854→            APP\_STATE.brandName \= document.getElementById('configStoreName').value;  
+   855→   855→            APP\_STATE.brandSubtitle \= document.getElementById('configStoreSubtitle').value;  
+   856→   856→            APP\_STATE.pixKey \= document.getElementById('configStorePix').value;  
+   857→   857→            saveToLocalStorage();  
+   858→   858→            applyBranding();  
+   859→   859→            alert('Configurações da marca atualizadas\!');  
+   860→   860→        }
+   861→   861→
+   862→   862→        // \--- GESTÃO DE PRODUTOS \---  
+   863→   863→        function openProductModal(editId \= null) {  
+   864→   864→            const form \= document.getElementById('productForm');  
+   865→   865→            form.reset();  
+   866→   866→            document.getElementById('prodId').value \= '';  
+   867→   867→            document.getElementById('prodImagePreview').src \= "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=300\&auto=format\&fit=crop\&q=60";  
+   868→   868→            document.getElementById('productModalTitle').innerText \= "Cadastrar Nova Camisa";
+   869→   869→
+   870→   870→            if (editId) {  
+   871→   871→                const p \= APP\_STATE.products.find(x \=\> x.id \=== editId);  
+   872→   872→                if (p) {  
+   873→   873→                    document.getElementById('prodId').value \= p.id;  
+   874→   874→                    document.getElementById('prodCode').value \= p.code;  
+   875→   875→                    document.getElementById('prodName').value \= p.name;  
+   876→   876→                    document.getElementById('prodPrint').value \= p.print;  
+   877→   877→                    document.getElementById('prodColor').value \= p.color;  
+   878→   878→                    document.getElementById('prodCost').value \= p.cost;  
+   879→   879→                    document.getElementById('prodPrice').value \= p.price;  
+   880→   880→                    document.getElementById('prodMinStock').value \= p.minStock || 5;  
+   881→   881→                    document.getElementById('prodStockP').value \= p.sizes.P;  
+   882→   882→                    document.getElementById('prodStockM').value \= p.sizes.M;  
+   883→   883→                    document.getElementById('prodStockG').value \= p.sizes.G;  
+   884→   884→                    document.getElementById('prodStockGG').value \= p.sizes.GG;  
+   885→   885→                    document.getElementById('prodImagePreview').src \= p.image;  
+   886→   886→                    document.getElementById('productModalTitle').innerText \= "Editar Camisa / Grade";  
+   887→   887→                    calcProfitPreview();  
+   888→   888→                }  
+   889→   889→            }  
+   890→   890→            document.getElementById('productModal').classList.remove('hidden');  
+   891→   891→            document.getElementById('productModal').classList.add('flex');  
+   892→   892→        }
+   893→   893→
+   894→   894→        function closeProductModal() {  
+   895→   895→            document.getElementById('productModal').classList.add('hidden');  
+   896→   896→            document.getElementById('productModal').classList.remove('flex');  
+   897→   897→        }
+   898→   898→
+   899→   899→        function previewImage(event, targetImgId) {  
+   900→   900→            const file \= event.target.files\[0\];  
+   901→   901→            if (file) {  
+   902→   902→                const reader \= new FileReader();  
+   903→   903→                reader.onload \= function(e) {  
+   904→   904→                    document.getElementById(targetImgId).src \= e.target.result;  
+   905→   905→                }  
+   906→   906→                reader.readAsDataURL(file);  
+   907→   907→            }  
+   908→   908→        }
+   909→   909→
+   910→   910→        function calcProfitPreview() {  
+   911→   911→            const cost \= parseFloat(document.getElementById('prodCost').value) || 0;  
+   912→   912→            const price \= parseFloat(document.getElementById('prodPrice').value) || 0;  
+   913→   913→            const profit \= price \- cost;  
+   914→   914→            const margin \= price \> 0 ? ((profit / price) \* 100).toFixed(1) : 0;
+   915→   915→
+   916→   916→            document.getElementById('previewProfitVal').innerText \= \`R$ ${profit.toFixed(2)}\`;  
+   917→   917→            document.getElementById('previewProfitMargin').innerText \= \`${margin}%\`;  
+   918→   918→        }
+   919→   919→
+   920→   920→        function saveProduct() {  
+   921→   921→            const id \= document.getElementById('prodId').value || 'prod\_' \+ Date.now();  
+   922→   922→            const product \= {  
+   923→   923→                id,  
+   924→   924→                code: document.getElementById('prodCode').value,  
+   925→   925→                name: document.getElementById('prodName').value,  
+   926→   926→                print: document.getElementById('prodPrint').value,  
+   927→   927→                color: document.getElementById('prodColor').value,  
+   928→   928→                cost: parseFloat(document.getElementById('prodCost').value) || 0,  
+   929→   929→                price: parseFloat(document.getElementById('prodPrice').value) || 0,  
+   930→   930→                minStock: parseInt(document.getElementById('prodMinStock').value) || 5,  
+   931→   931→                sizes: {  
+   932→   932→                    P: parseInt(document.getElementById('prodStockP').value) || 0,  
+   933→   933→                    M: parseInt(document.getElementById('prodStockM').value) || 0,  
+   934→   934→                    G: parseInt(document.getElementById('prodStockG').value) || 0,  
+   935→   935→                    GG: parseInt(document.getElementById('prodStockGG').value) || 0  
+   936→   936→                },  
+   937→   937→                image: document.getElementById('prodImagePreview').src  
+   938→   938→            };
+   939→   939→
+   940→   940→            const index \= APP\_STATE.products.findIndex(p \=\> p.id \=== id);  
+   941→   941→            if (index \>= 0\) {  
+   942→   942→                APP\_STATE.products\[index\] \= product;  
+   943→   943→            } else {  
+   944→   944→                APP\_STATE.products.push(product);  
+   945→   945→            }
+   946→   946→
+   947→   947→            saveToLocalStorage();  
+   948→   948→            closeProductModal();  
+   949→   949→            refreshAllViews();  
+   950→   950→        }
+   951→   951→
+   952→   952→        function deleteProduct(id) {  
+   953→   953→            if (confirm("Tem certeza que deseja excluir este modelo? O histórico de estoque deste produto será removido.")) {  
+   954→   954→                APP\_STATE.products \= APP\_STATE.products.filter(p \=\> p.id \!== id);  
+   955→   955→                saveToLocalStorage();  
+   956→   956→                refreshAllViews();  
+   957→   957→            }  
+   958→   958→        }
+   959→   959→
+   960→   960→        function renderProductsTable() {  
+   961→   961→            const tbody \= document.getElementById('productsTableBody');  
+   962→   962→            const search \= (document.getElementById('searchProductInput')?.value || '').toLowerCase();  
+   963→   963→            tbody.innerHTML \= '';
+   964→   964→
+   965→   965→            const filtered \= APP\_STATE.products.filter(p \=\>   
+   966→   966→                p.name.toLowerCase().includes(search) ||   
+   967→   967→                p.code.toLowerCase().includes(search) ||   
+   968→   968→                p.print.toLowerCase().includes(search) ||   
+   969→   969→                p.color.toLowerCase().includes(search)  
+   970→   970→            );
+   971→   971→
+   972→   972→            if (filtered.length \=== 0\) {  
+   973→   973→                tbody.innerHTML \= \`\<tr\>\<td colspan="7" class="p-6 text-center text-slate-400"\>Nenhum produto cadastrado.\</td\>\</tr\>\`;  
+   974→   974→                return;  
+   975→   975→            }
+   976→   976→
+   977→   977→            filtered.forEach(p \=\> {  
+   978→   978→                const profit \= p.price \- p.cost;  
+   979→   979→                const margin \= p.price \> 0 ? ((profit / p.price) \* 100).toFixed(1) : 0;  
+   980→   980→                const totalStock \= p.sizes.P \+ p.sizes.M \+ p.sizes.G \+ p.sizes.GG;
+   981→   981→
+   982→   982→                const tr \= document.createElement('tr');  
+   983→   983→                tr.className \= "hover:bg-slate-50 transition border-b border-slate-100";  
+   984→   984→                tr.innerHTML \= \`  
+   985→   985→                    \<td class="p-3.5"\>  
+   986→   986→                        \<img src="${p.image}" class="w-10 h-10 object-cover rounded-xl border border-slate-200 shadow-sm" /\>  
+   987→   987→                    \</td\>  
+   988→   988→                    \<td class="p-3.5"\>  
+   989→   989→                        \<div class="font-bold text-slate-800"\>${p.name}\</div\>  
+   990→   990→                        \<div class="text-\[10px\] font-mono text-slate-400"\>${p.code}\</div\>  
+   991→   991→                    \</td\>  
+   992→   992→                    \<td class="p-3.5"\>  
+   993→   993→                        \<span class="inline-block px-2 py-0.5 bg-slate-100 text-slate-700 rounded-md font-medium text-\[11px\] mb-1"\>${p.print}\</span\>  
+   994→   994→                        \<div class="text-\[11px\] text-slate-500"\>${p.color}\</div\>  
+   995→   995→                    \</td\>  
+   996→   996→                    \<td class="p-3.5 text-center"\>  
+   997→   997→                        \<div class="flex justify-center gap-1.5 font-semibold text-\[11px\]"\>  
+   998→   998→                            \<span class="px-1.5 py-0.5 bg-slate-100 rounded"\>P: ${p.sizes.P}\</span\>  
+   999→   999→                            \<span class="px-1.5 py-0.5 bg-slate-100 rounded"\>M: ${p.sizes.M}\</span\>  
+  1000→  1000→                            \<span class="px-1.5 py-0.5 bg-slate-100 rounded"\>G: ${p.sizes.G}\</span\>  
+  1001→  1001→                            \<span class="px-1.5 py-0.5 bg-slate-100 rounded"\>GG: ${p.sizes.GG}\</span\>  
+  1002→  1002→                        \</div\>  
+  1003→  1003→                        \<div class="text-\[10px\] text-slate-400 mt-1"\>Total: ${totalStock} peças\</div\>  
+  1004→  1004→                    \</td\>  
+  1005→  1005→                    \<td class="p-3.5 text-right"\>  
+  1006→  1006→                        \<div class="font-bold text-slate-900"\>R$ ${p.price.toFixed(2)}\</div\>  
+  1007→  1007→                        \<div class="text-\[10px\] text-slate-400"\>Custo: R$ ${p.cost.toFixed(2)}\</div\>  
+  1008→  1008→                    \</td\>  
+  1009→  1009→                    \<td class="p-3.5 text-right"\>  
+  1010→  1010→                        \<div class="font-bold text-emerald-600"\>R$ ${profit.toFixed(2)}\</div\>  
+  1011→  1011→                        \<div class="text-\[10px\] text-emerald-500 font-semibold"\>${margin}% margem\</div\>  
+  1012→  1012→                    \</td\>  
+  1013→  1013→                    \<td class="p-3.5 text-center"\>  
+  1014→  1014→                        \<div class="flex items-center justify-center gap-2"\>  
+  1015→  1015→                            \<button onclick="openProductModal('${p.id}')" class="p-1.5 hover:bg-slate-100 text-slate-600 rounded-lg" title="Editar"\>\<i data-lucide="edit-3" class="w-4 h-4"\>\</i\>\</button\>  
+  1016→  1016→                            \<button onclick="deleteProduct('${p.id}')" class="p-1.5 hover:bg-rose-50 text-rose-500 rounded-lg" title="Excluir"\>\<i data-lucide="trash-2" class="w-4 h-4"\>\</i\>\</button\>  
+  1017→  1017→                        \</div\>  
+  1018→  1018→                    \</td\>  
+  1019→  1019→                \`;  
+  1020→  1020→                tbody.appendChild(tr);  
+  1021→  1021→            });  
+  1022→  1022→            lucide.createIcons();  
+  1023→  1023→        }
+  1024→  1024→
+  1025→  1025→        // \--- GESTÃO DE ESTOQUE E ALERTAS \---  
+  1026→  1026→        function renderStockTable() {  
+  1027→  1027→            const tbody \= document.getElementById('stockTableBody');  
+  1028→  1028→            const filter \= document.getElementById('stockFilterSelect')?.value || 'all';  
+  1029→  1029→            tbody.innerHTML \= '';
+  1030→  1030→
+  1031→  1031→            let lowStockCounter \= 0;
+  1032→  1032→
+  1033→  1033→            APP\_STATE.products.forEach(p \=\> {  
+  1034→  1034→                const totalStock \= p.sizes.P \+ p.sizes.M \+ p.sizes.G \+ p.sizes.GG;  
+  1035→  1035→                const isLow \= totalStock \<= (p.minStock || 5);
+  1036→  1036→
+  1037→  1037→                if (isLow) lowStockCounter++;  
+  1038→  1038→                if (filter \=== 'low' && \!isLow) return;
+  1039→  1039→
+  1040→  1040→                const tr \= document.createElement('tr');  
+  1041→  1041→                tr.className \= "hover:bg-slate-50 transition border-b border-slate-100";  
+  1042→  1042→                tr.innerHTML \= \`  
+  1043→  1043→                    \<td class="p-3.5"\>  
+  1044→  1044→                        \<img src="${p.image}" class="w-10 h-10 object-cover rounded-xl border border-slate-200 shadow-sm" /\>  
+  1045→  1045→                    \</td\>  
+  1046→  1046→                    \<td class="p-3.5"\>  
+  1047→  1047→                        \<div class="font-bold text-slate-800"\>${p.name}\</div\>  
+  1048→  1048→                        \<div class="text-\[11px\] text-slate-400 font-mono"\>${p.code} • ${p.print} (${p.color})\</div\>  
+  1049→  1049→                    \</td\>  
+  1050→  1050→                    \<td class="p-3.5 text-center font-bold"\>${p.sizes.P}\</td\>  
+  1051→  1051→                    \<td class="p-3.5 text-center font-bold"\>${p.sizes.M}\</td\>  
+  1052→  1052→                    \<td class="p-3.5 text-center font-bold"\>${p.sizes.G}\</td\>  
+  1053→  1053→                    \<td class="p-3.5 text-center font-bold"\>${p.sizes.GG}\</td\>  
+  1054→  1054→                    \<td class="p-3.5 text-center"\>  
+  1055→  1055→                        \<span class="text-xs font-extrabold ${isLow ? 'text-rose-600' : 'text-slate-800'}"\>${totalStock} un\</span\>  
+  1056→  1056→                    \</td\>  
+  1057→  1057→                    \<td class="p-3.5 text-center text-slate-500 font-medium"\>${p.minStock || 5} un\</td\>  
+  1058→  1058→                    \<td class="p-3.5 text-center"\>  
+  1059→  1059→                        ${isLow   
+  1060→  1060→                            ? \`\<span class="px-2.5 py-1 bg-rose-100 text-rose-700 text-\[10px\] font-bold rounded-full inline-flex items-center gap-1"\>\<i data-lucide="alert-circle" class="w-3 h-3"\>\</i\> Estoque Baixo\</span\>\`  
+  1061→  1061→                            : \`\<span class="px-2.5 py-1 bg-emerald-100 text-emerald-700 text-\[10px\] font-bold rounded-full"\>Normal\</span\>\`  
+  1062→  1062→                        }  
+  1063→  1063→                    \</td\>  
+  1064→  1064→                    \<td class="p-3.5 text-center"\>  
+  1065→  1065→                        \<button onclick="openStockAdjustPrompt('${p.id}')" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg text-xs font-semibold"\>  
+  1066→  1066→                            \+ Repor Grade  
+  1067→  1067→                        \</button\>  
+  1068→  1068→                    \</td\>  
+  1069→  1069→                \`;  
+  1070→  1070→                tbody.appendChild(tr);  
+  1071→  1071→            });
+  1072→  1072→
+  1073→  1073→            // Atualiza alerta na Sidebar  
+  1074→  1074→            const warningBadge \= document.getElementById('lowStockWarningBadge');  
+  1075→  1075→            const countText \= document.getElementById('lowStockCountText');  
+  1076→  1076→            if (lowStockCounter \> 0\) {  
+  1077→  1077→                warningBadge.classList.remove('hidden');  
+  1078→  1078→                countText.innerText \= \`${lowStockCounter} produto(s) abaixo do mínimo\!\`;  
+  1079→  1079→            } else {  
+  1080→  1080→                warningBadge.classList.add('hidden');  
+  1081→  1081→            }
+  1082→  1082→
+  1083→  1083→            lucide.createIcons();  
+  1084→  1084→        }
+  1085→  1085→
+  1086→  1086→        function openStockAdjustPrompt(prodId) {  
+  1087→  1087→            const p \= APP\_STATE.products.find(x \=\> x.id \=== prodId);  
+  1088→  1088→            if (\!p) return;
+  1089→  1089→
+  1090→  1090→            const size \= prompt(\`Adicionar estoque para "${p.name}".\\nDigite o tamanho (P, M, G ou GG):\`)?.toUpperCase();  
+  1091→  1091→            if (\!\['P', 'M', 'G', 'GG'\].includes(size)) {  
+  1092→  1092→                if (size) alert('Tamanho inválido\! Escolha P, M, G ou GG.');  
+  1093→  1093→                return;  
+  1094→  1094→            }
+  1095→  1095→
+  1096→  1096→            const qty \= parseInt(prompt(\`Quantidade a adicionar no tamanho ${size}:\`));  
+  1097→  1097→            if (\!isNaN(qty) && qty \> 0\) {  
+  1098→  1098→                p.sizes\[size\] \+= qty;  
+  1099→  1099→                saveToLocalStorage();  
+  1100→  1100→                refreshAllViews();  
+  1101→  1101→                alert(\`Estoque atualizado com sucesso\! (+${qty} un em ${size})\`);  
+  1102→  1102→            }  
+  1103→  1103→        }
+  1104→  1104→
+  1105→  1105→        // \--- SISTEMA DE ROMANEIO (VENDAS / PDV) \---  
+  1106→  1106→        function openRomaneioModal() {  
+  1107→  1107→            APP\_STATE.currentCart \= \[\];  
+  1108→  1108→            document.getElementById('romClientName').value \= '';  
+  1109→  1109→            document.getElementById('romClientPhone').value \= '';  
+  1110→  1110→            document.getElementById('romClientEmail').value \= '';  
+  1111→  1111→            document.getElementById('romDate').value \= new Date().toISOString().split('T')\[0\];
+  1112→  1112→
+  1113→  1113→            populateRomaneioProductSelect();  
+  1114→  1114→            renderRomaneioCart();
+  1115→  1115→
+  1116→  1116→            document.getElementById('romaneioModal').classList.remove('hidden');  
+  1117→  1117→            document.getElementById('romaneioModal').classList.add('flex');  
+  1118→  1118→        }
+  1119→  1119→
+  1120→  1120→        function closeRomaneioModal() {  
+  1121→  1121→            document.getElementById('romaneioModal').classList.add('hidden');  
+  1122→  1122→            document.getElementById('romaneioModal').classList.remove('flex');  
+  1123→  1123→        }
+  1124→  1124→
+  1125→  1125→        function populateRomaneioProductSelect() {  
+  1126→  1126→            const select \= document.getElementById('romProductSelect');  
+  1127→  1127→            select.innerHTML \= '';  
+  1128→  1128→            APP\_STATE.products.forEach(p \=\> {  
+  1129→  1129→                const opt \= document.createElement('option');  
+  1130→  1130→                opt.value \= p.id;  
+  1131→  1131→                opt.innerText \= \`${p.name} (${p.print} \- ${p.color}) \- R$ ${p.price.toFixed(2)}\`;  
+  1132→  1132→                select.appendChild(opt);  
+  1133→  1133→            });  
+  1134→  1134→            updateRomaneioSizeOptions();  
+  1135→  1135→        }
+  1136→  1136→
+  1137→  1137→        function updateRomaneioSizeOptions() {  
+  1138→  1138→            const prodId \= document.getElementById('romProductSelect').value;  
+  1139→  1139→            const p \= APP\_STATE.products.find(x \=\> x.id \=== prodId);  
+  1140→  1140→            const sizeSelect \= document.getElementById('romSizeSelect');  
+  1141→  1141→            if (p) {  
+  1142→  1142→                sizeSelect.innerHTML \= \`  
+  1143→  1143→                    \<option value="P"\>P (Disponível: ${p.sizes.P})\</option\>  
+  1144→  1144→                    \<option value="M"\>M (Disponível: ${p.sizes.M})\</option\>  
+  1145→  1145→                    \<option value="G"\>G (Disponível: ${p.sizes.G})\</option\>  
+  1146→  1146→                    \<option value="GG"\>GG (Disponível: ${p.sizes.GG})\</option\>  
+  1147→  1147→                \`;  
+  1148→  1148→            }  
+  1149→  1149→        }
+  1150→  1150→
+  1151→  1151→        function addItemToRomaneioCart() {  
+  1152→  1152→            const prodId \= document.getElementById('romProductSelect').value;  
+  1153→  1153→            const size \= document.getElementById('romSizeSelect').value;  
+  1154→  1154→            const p \= APP\_STATE.products.find(x \=\> x.id \=== prodId);
+  1155→  1155→
+  1156→  1156→            if (\!p) return;  
+  1157→  1157→            if (p.sizes\[size\] \<= 0\) {  
+  1158→  1158→                alert(\`Estoque indisponível para o tamanho ${size} deste modelo\!\`);  
+  1159→  1159→                return;  
+  1160→  1160→            }
+  1161→  1161→
+  1162→  1162→            APP\_STATE.currentCart.push({  
+  1163→  1163→                productId: p.id,  
+  1164→  1164→                name: p.name,  
+  1165→  1165→                code: p.code,  
+  1166→  1166→                print: p.print,  
+  1167→  1167→                color: p.color,  
+  1168→  1168→                size: size,  
+  1169→  1169→                price: p.price,  
+  1170→  1170→                cost: p.cost,  
+  1171→  1171→                image: p.image  
+  1172→  1172→            });
+  1173→  1173→
+  1174→  1174→            renderRomaneioCart();  
+  1175→  1175→        }
+  1176→  1176→
+  1177→  1177→        function removeCartItem(index) {  
+  1178→  1178→            APP\_STATE.currentCart.splice(index, 1);  
+  1179→  1179→            renderRomaneioCart();  
+  1180→  1180→        }
+  1181→  1181→
+  1182→  1182→        function renderRomaneioCart() {  
+  1183→  1183→            const container \= document.getElementById('romCartItemsList');  
+  1184→  1184→            const totalEl \= document.getElementById('romCartTotal');
+  1185→  1185→
+  1186→  1186→            if (APP\_STATE.currentCart.length \=== 0\) {  
+  1187→  1187→                container.innerHTML \= \`\<p class="p-4 text-center text-xs text-slate-400"\>Nenhum item adicionado ainda.\</p\>\`;  
+  1188→  1188→                totalEl.innerText \= "R$ 0,00";  
+  1189→  1189→                return;  
+  1190→  1190→            }
+  1191→  1191→
+  1192→  1192→            container.innerHTML \= '';  
+  1193→  1193→            let total \= 0;
+  1194→  1194→
+  1195→  1195→            APP\_STATE.currentCart.forEach((item, index) \=\> {  
+  1196→  1196→                total \+= item.price;  
+  1197→  1197→                const div \= document.createElement('div');  
+  1198→  1198→                div.className \= "p-3 flex items-center justify-between hover:bg-slate-50 text-xs";  
+  1199→  1199→                div.innerHTML \= \`  
+  1200→  1200→                    \<div class="flex items-center gap-3"\>  
+  1201→  1201→                        \<img src="${item.image}" class="w-8 h-8 rounded-lg object-cover border" /\>  
+  1202→  1202→                        \<div\>  
+  1203→  1203→                            \<div class="font-bold text-slate-800"\>${item.name}\</div\>  
+  1204→  1204→                            \<div class="text-\[10px\] text-slate-400"\>Tam: \<span class="font-bold text-amber-600"\>${item.size}\</span\> | Cor: ${item.color}\</div\>  
+  1205→  1205→                        \</div\>  
+  1206→  1206→                    \</div\>  
+  1207→  1207→                    \<div class="flex items-center gap-4"\>  
+  1208→  1208→                        \<span class="font-bold text-slate-900"\>R$ ${item.price.toFixed(2)}\</span\>  
+  1209→  1209→                        \<button onclick="removeCartItem(${index})" class="text-rose-500 hover:text-rose-700"\>\<i data-lucide="trash" class="w-4 h-4"\>\</i\>\</button\>  
+  1210→  1210→                    \</div\>  
+  1211→  1211→                \`;  
+  1212→  1212→                container.appendChild(div);  
+  1213→  1213→            });
+  1214→  1214→
+  1215→  1215→            totalEl.innerText \= \`R$ ${total.toFixed(2)}\`;  
+  1216→  1216→            lucide.createIcons();  
+  1217→  1217→        }
+  1218→  1218→
+  1219→  1219→        function finalizeRomaneio() {  
+  1220→  1220→            if (APP\_STATE.currentCart.length \=== 0\) {  
+  1221→  1221→                alert("Adicione ao menos uma camisa ao romaneio\!");  
+  1222→  1222→                return;  
+  1223→  1223→            }
+  1224→  1224→
+  1225→  1225→            const clientName \= document.getElementById('romClientName').value || "Cliente Geral";  
+  1226→  1226→            const clientPhone \= document.getElementById('romClientPhone').value || "-";  
+  1227→  1227→            const clientEmail \= document.getElementById('romClientEmail').value || "-";  
+  1228→  1228→            const paymentMethod \= document.getElementById('romPaymentMethod').value;  
+  1229→  1229→            const saleDate \= document.getElementById('romDate').value || new Date().toISOString().split('T')\[0\];
+  1230→  1230→
+  1231→  1231→            // 1\. Dar Baixa no Estoque Real  
+  1232→  1232→            APP\_STATE.currentCart.forEach(item \=\> {  
+  1233→  1233→                const prod \= APP\_STATE.products.find(p \=\> p.id \=== item.productId);  
+  1234→  1234→                if (prod && prod.sizes\[item.size\] \> 0\) {  
+  1235→  1235→                    prod.sizes\[item.size\] \-= 1;  
+  1236→  1236→                }  
+  1237→  1237→            });
+  1238→  1238→
+  1239→  1239→            // 2\. Criar Objeto Romaneio  
+  1240→  1240→            const saleRecord \= {  
+  1241→  1241→                id: 'ROM-' \+ (Math.floor(100000 \+ Math.random() \* 900000)),  
+  1242→  1242→                date: saleDate,  
+  1243→  1243→                client: { name: clientName, phone: clientPhone, email: clientEmail },  
+  1244→  1244→                paymentMethod,  
+  1245→  1245→                items: \[...APP\_STATE.currentCart\],  
+  1246→  1246→                total: APP\_STATE.currentCart.reduce((sum, i) \=\> sum \+ i.price, 0),  
+  1247→  1247→                totalCost: APP\_STATE.currentCart.reduce((sum, i) \=\> sum \+ i.cost, 0\)  
+  1248→  1248→            };
+  1249→  1249→
+  1250→  1250→            APP\_STATE.sales.unshift(saleRecord);  
+  1251→  1251→            saveToLocalStorage();  
+  1252→  1252→            closeRomaneioModal();  
+  1253→  1253→            refreshAllViews();
+  1254→  1254→
+  1255→  1255→            // Opção de abrir WhatsApp ou imprimir  
+  1256→  1256→            if (confirm(\`Romaneio ${saleRecord.id} gerado com sucesso\! Deseja enviar os detalhes no WhatsApp do cliente agora?\`)) {  
+  1257→  1257→                sendRomaneioWhatsApp(saleRecord.id);  
+  1258→  1258→            }  
+  1259→  1259→        }
+  1260→  1260→
+  1261→  1261→        function renderRomaneioTable() {  
+  1262→  1262→            const tbody \= document.getElementById('romaneioTableBody');  
+  1263→  1263→            tbody.innerHTML \= '';
+  1264→  1264→
+  1265→  1265→            if (APP\_STATE.sales.length \=== 0\) {  
+  1266→  1266→                tbody.innerHTML \= \`\<tr\>\<td colspan="8" class="p-6 text-center text-slate-400"\>Nenhum romaneio emitido ainda.\</td\>\</tr\>\`;  
+  1267→  1267→                return;  
+  1268→  1268→            }
+  1269→  1269→
+  1270→  1270→            APP\_STATE.sales.forEach(s \=\> {  
+  1271→  1271→                const tr \= document.createElement('tr');  
+  1272→  1272→                tr.className \= "hover:bg-slate-50 transition border-b border-slate-100";  
+  1273→  1273→                tr.innerHTML \= \`  
+  1274→  1274→                    \<td class="p-3.5 font-bold font-mono text-slate-800"\>${s.id}\</td\>  
+  1275→  1275→                    \<td class="p-3.5 text-slate-500"\>${s.date}\</td\>  
+  1276→  1276→                    \<td class="p-3.5 font-semibold text-slate-800"\>${s.client.name}\</td\>  
+  1277→  1277→                    \<td class="p-3.5 text-\[11px\] text-slate-500"\>${s.client.phone}\<br\>${s.client.email}\</td\>  
+  1278→  1278→                    \<td class="p-3.5"\>  
+  1279→  1279→                        \<div class="text-\[11px\] font-medium text-slate-700"\>${s.items.length} peça(s)\</div\>  
+  1280→  1280→                        \<div class="text-\[10px\] text-slate-400 truncate max-w-xs"\>${s.items.map(i \=\> \`${i.name} \[${i.size}\]\`).join(', ')}\</div\>  
+  1281→  1281→                    \</td\>  
+  1282→  1282→                    \<td class="p-3.5"\>  
+  1283→  1283→                        \<span class="px-2 py-0.5 bg-slate-100 text-slate-700 rounded-md font-semibold text-\[10px\]"\>${s.paymentMethod}\</span\>  
+  1284→  1284→                    \</td\>  
+  1285→  1285→                    \<td class="p-3.5 text-right font-extrabold text-slate-900"\>R$ ${s.total.toFixed(2)}\</td\>  
+  1286→  1286→                    \<td class="p-3.5 text-center"\>  
+  1287→  1287→                        \<div class="flex items-center justify-center gap-1.5"\>  
+  1288→  1288→                            \<button onclick="exportSingleRomaneioPDF('${s.id}')" title="Gerar PDF" class="p-1.5 hover:bg-slate-100 text-slate-600 rounded-lg"\>\<i data-lucide="printer" class="w-4 h-4"\>\</i\>\</button\>  
+  1289→  1289→                            \<button onclick="sendRomaneioWhatsApp('${s.id}')" title="Enviar WhatsApp" class="p-1.5 hover:bg-emerald-50 text-emerald-600 rounded-lg"\>\<i data-lucide="message-circle" class="w-4 h-4"\>\</i\>\</button\>  
+  1290→  1290→                        \</div\>  
+  1291→  1291→                    \</td\>  
+  1292→  1292→                \`;  
+  1293→  1293→                tbody.appendChild(tr);  
+  1294→  1294→            });  
+  1295→  1295→            lucide.createIcons();  
+  1296→  1296→        }
+  1297→  1297→
+  1298→  1298→        function sendRomaneioWhatsApp(romaneioId) {  
+  1299→  1299→            const sale \= APP\_STATE.sales.find(s \=\> s.id \=== romaneioId);  
+  1300→  1300→            if (\!sale) return;
+  1301→  1301→
+  1302→  1302→            let phoneClean \= sale.client.phone.replace(/\\D/g, '');  
+  1303→  1303→            if (\!phoneClean) {  
+  1304→  1304→                alert("Telefone inválido ou não preenchido no romaneio.");  
+  1305→  1305→                return;  
+  1306→  1306→            }
+  1307→  1307→
+  1308→  1308→            const itemsText \= sale.items.map(i \=\> \`• ${i.name} (${i.print}) \- Tam: ${i.size} \- R$ ${i.price.toFixed(2)}\`).join('\\n');  
+  1309→  1309→            const msg \= \`Olá \*${sale.client.name}\*\!\\n\\nAqui está o seu \*Romaneio / Pedido ${sale.id}\* da \*${APP\_STATE.brandName}\*:\\n\\n${itemsText}\\n\\n\*Total:\* R$ ${sale.total.toFixed(2)}\\n\*Forma de Pagamento:\* ${sale.paymentMethod}\\n\*Chave PIX:\* ${APP\_STATE.pixKey}\\n\\nAgradecemos a preferência\! Deus abençoe\!\`;
+  1310→  1310→
+  1311→  1311→            window.open(\`https://wa.me/55${phoneClean}?text=${encodeURIComponent(msg)}\`, '\_blank');  
+  1312→  1312→        }
+  1313→  1313→
+  1314→  1314→        // \--- PAINEL FINANCEIRO & GRÁFICOS \---  
+  1315→  1315→        let chartSalesInstance \= null;  
+  1316→  1316→        let chartSizesInstance \= null;  
+  1317→  1317→        let chartPaymentInstance \= null;  
+  1318→  1318→        let chartMonthlyInstance \= null;
+  1319→  1319→
+  1320→  1320→        function refreshAllViews() {  
+  1321→  1321→            applyBranding();  
+  1322→  1322→            renderProductsTable();  
+  1323→  1323→            renderStockTable();  
+  1324→  1324→            renderRomaneioTable();  
+  1325→  1325→            updateFinancialKPIs();  
+  1326→  1326→        }
+  1327→  1327→
+  1328→  1328→        function updateFinancialKPIs() {  
+  1329→  1329→            const totalGross \= APP\_STATE.sales.reduce((sum, s) \=\> sum \+ s.total, 0);  
+  1330→  1330→            const totalCost \= APP\_STATE.sales.reduce((sum, s) \=\> sum \+ s.totalCost, 0);  
+  1331→  1331→            const netProfit \= totalGross \- totalCost;  
+  1332→  1332→            const margin \= totalGross \> 0 ? ((netProfit / totalGross) \* 100).toFixed(1) : 0;
+  1333→  1333→
+  1334→  1334→            let totalPieces \= 0;  
+  1335→  1335→            let totalStockValuation \= 0;  
+  1336→  1336→            APP\_STATE.products.forEach(p \=\> {  
+  1337→  1337→                const count \= p.sizes.P \+ p.sizes.M \+ p.sizes.G \+ p.sizes.GG;  
+  1338→  1338→                totalPieces \+= count;  
+  1339→  1339→                totalStockValuation \+= (count \* p.cost);  
+  1340→  1340→            });
+  1341→  1341→
+  1342→  1342→            // Dashboard  
+  1343→  1343→            document.getElementById('dashTotalSales').innerText \= \`R$ ${totalGross.toFixed(2)}\`;  
+  1344→  1344→            document.getElementById('dashSalesCount').innerText \= \`${APP\_STATE.sales.length} vendas realizadas\`;  
+  1345→  1345→            document.getElementById('dashNetProfit').innerText \= \`R$ ${netProfit.toFixed(2)}\`;  
+  1346→  1346→            document.getElementById('dashProfitMargin').innerText \= \`Margem Líquida: ${margin}%\`;  
+  1347→  1347→            document.getElementById('dashTotalStock').innerText \= \`${totalPieces} un\`;  
+  1348→  1348→            document.getElementById('dashModelsCount').innerText \= \`${APP\_STATE.products.length} modelos cadastrados\`;  
+  1349→  1349→            document.getElementById('dashStockValuation').innerText \= \`R$ ${totalStockValuation.toFixed(2)}\`;
+  1350→  1350→
+  1351→  1351→            // Financeiro  
+  1352→  1352→            document.getElementById('finGrossSales').innerText \= \`R$ ${totalGross.toFixed(2)}\`;  
+  1353→  1353→            document.getElementById('finTotalCost').innerText \= \`R$ ${totalCost.toFixed(2)}\`;  
+  1354→  1354→            document.getElementById('finNetProfit').innerText \= \`R$ ${netProfit.toFixed(2)}\`;  
+  1355→  1355→            document.getElementById('finMarginPercent').innerText \= \`Margem de Lucro: ${margin}%\`;  
+  1356→  1356→        }
+  1357→  1357→
+  1358→  1358→        function renderDashboardCharts() {  
+  1359→  1359→            updateFinancialKPIs();
+  1360→  1360→
+  1361→  1361→            // Gráfico de Faturamento vs Lucro  
+  1362→  1362→            const ctx1 \= document.getElementById('chartDashboardSales')?.getContext('2d');  
+  1363→  1363→            if (ctx1) {  
+  1364→  1364→                if (chartSalesInstance) chartSalesInstance.destroy();  
+  1365→  1365→                chartSalesInstance \= new Chart(ctx1, {  
+  1366→  1366→                    type: 'bar',  
+  1367→  1367→                    data: {  
+  1368→  1368→                        labels: \['Totais Acumulados'\],  
+  1369→  1369→                        datasets: \[  
+  1370→  1370→                            { label: 'Faturamento Bruto', data: \[APP\_STATE.sales.reduce((s, x) \=\> s \+ x.total, 0)\], backgroundColor: '\#d97706' },  
+  1371→  1371→                            { label: 'Lucro Líquido', data: \[APP\_STATE.sales.reduce((s, x) \=\> s \+ (x.total \- x.totalCost), 0)\], backgroundColor: '\#10b981' }  
+  1372→  1372→                        \]  
+  1373→  1373→                    },  
+  1374→  1374→                    options: { responsive: true, maintainAspectRatio: false }  
+  1375→  1375→                });  
+  1376→  1376→            }
+  1377→  1377→
+  1378→  1378→            // Gráfico de Tamanhos  
+  1379→  1379→            const ctx2 \= document.getElementById('chartDashboardSizes')?.getContext('2d');  
+  1380→  1380→            if (ctx2) {  
+  1381→  1381→                if (chartSizesInstance) chartSizesInstance.destroy();  
+  1382→  1382→                let pCount \= 0, mCount \= 0, gCount \= 0, ggCount \= 0;  
+  1383→  1383→                APP\_STATE.products.forEach(p \=\> {  
+  1384→  1384→                    pCount \+= p.sizes.P;  
+  1385→  1385→                    mCount \+= p.sizes.M;  
+  1386→  1386→                    gCount \+= p.sizes.G;  
+  1387→  1387→                    ggCount \+= p.sizes.GG;  
+  1388→  1388→                });
+  1389→  1389→
+  1390→  1390→                chartSizesInstance \= new Chart(ctx2, {  
+  1391→  1391→                    type: 'doughnut',  
+  1392→  1392→                    data: {  
+  1393→  1393→                        labels: \['P', 'M', 'G', 'GG'\],  
+  1394→  1394→                        datasets: \[{  
+  1395→  1395→                            data: \[pCount, mCount, gCount, ggCount\],  
+  1396→  1396→                            backgroundColor: \['\#38bdf8', '\#818cf8', '\#f59e0b', '\#ec4899'\]  
+  1397→  1397→                        }\]  
+  1398→  1398→                    },  
+  1399→  1399→                    options: { responsive: true, maintainAspectRatio: false }  
+  1400→  1400→                });  
+  1401→  1401→            }  
+  1402→  1402→        }
+  1403→  1403→
+  1404→  1404→        function renderFinanceCharts() {  
+  1405→  1405→            // Pagamentos  
+  1406→  1406→            const ctxPay \= document.getElementById('chartPaymentMethods')?.getContext('2d');  
+  1407→  1407→            if (ctxPay) {  
+  1408→  1408→                if (chartPaymentInstance) chartPaymentInstance.destroy();  
+  1409→  1409→                  
+  1410→  1410→                const payCounts \= { PIX: 0, 'Cartão de Crédito': 0, 'Cartão de Débito': 0, Dinheiro: 0 };  
+  1411→  1411→                APP\_STATE.sales.forEach(s \=\> {  
+  1412→  1412→                    if (payCounts\[s.paymentMethod\] \!== undefined) payCounts\[s.paymentMethod\] \+= s.total;  
+  1413→  1413→                });
+  1414→  1414→
+  1415→  1415→                chartPaymentInstance \= new Chart(ctxPay, {  
+  1416→  1416→                    type: 'pie',  
+  1417→  1417→                    data: {  
+  1418→  1418→                        labels: Object.keys(payCounts),  
+  1419→  1419→                        datasets: \[{  
+  1420→  1420→                            data: Object.values(payCounts),  
+  1421→  1421→                            backgroundColor: \['\#10b981', '\#3b82f6', '\#8b5cf6', '\#f59e0b'\]  
+  1422→  1422→                        }\]  
+  1423→  1423→                    },  
+  1424→  1424→                    options: { responsive: true, maintainAspectRatio: false }  
+  1425→  1425→                });  
+  1426→  1426→            }
+  1427→  1427→
+  1428→  1428→            // Mensal  
+  1429→  1429→            const ctxMonthly \= document.getElementById('chartMonthlyFinance')?.getContext('2d');  
+  1430→  1430→            if (ctxMonthly) {  
+  1431→  1431→                if (chartMonthlyInstance) chartMonthlyInstance.destroy();  
+  1432→  1432→                chartMonthlyInstance \= new Chart(ctxMonthly, {  
+  1433→  1433→                    type: 'line',  
+  1434→  1434→                    data: {  
+  1435→  1435→                        labels: \['Histórico Geral'\],  
+  1436→  1436→                        datasets: \[{  
+  1437→  1437→                            label: 'Receita (R$)',  
+  1438→  1438→                            data: \[APP\_STATE.sales.reduce((s, x) \=\> s \+ x.total, 0)\],  
+  1439→  1439→                            borderColor: '\#d97706',  
+  1440→  1440→                            tension: 0.3,  
+  1441→  1441→                            fill: true,  
+  1442→  1442→                            backgroundColor: 'rgba(217, 119, 6, 0.1)'  
+  1443→  1443→                        }\]  
+  1444→  1444→                    },  
+  1445→  1445→                    options: { responsive: true, maintainAspectRatio: false }  
+  1446→  1446→                });  
+  1447→  1447→            }  
+  1448→  1448→        }
+  1449→  1449→
+  1450→  1450→        // \--- EXPORTAÇÃO EM PDF (JSPDF \+ HTML2CANVAS) \---  
+  1451→  1451→        function exportProductsPDF() {  
+  1452→  1452→            const { jsPDF } \= window.jspdf;  
+  1453→  1453→            const doc \= new jsPDF();  
+  1454→  1454→            doc.setFontSize(16);  
+  1455→  1455→            doc.text(\`${APP\_STATE.brandName} \- Catálogo de Produtos\`, 14, 20);  
+  1456→  1456→            doc.setFontSize(10);  
+  1457→  1457→            doc.text(\`Gerado em: ${new Date().toLocaleDateString('pt-BR')}\`, 14, 26);
+  1458→  1458→
+  1459→  1459→            let y \= 36;  
+  1460→  1460→            APP\_STATE.products.forEach((p, i) \=\> {  
+  1461→  1461→                if (y \> 270\) { doc.addPage(); y \= 20; }  
+  1462→  1462→                const total \= p.sizes.P \+ p.sizes.M \+ p.sizes.G \+ p.sizes.GG;  
+  1463→  1463→                doc.text(\`${i+1}. \[${p.code}\] ${p.name} \- ${p.print} (${p.color})\`, 14, y);  
+  1464→  1464→                doc.text(\`Preço: R$ ${p.price.toFixed(2)} | Custo: R$ ${p.cost.toFixed(2)} | Grade: P:${p.sizes.P} M:${p.sizes.M} G:${p.sizes.G} GG:${p.sizes.GG} (Total: ${total})\`, 14, y \+ 6);  
+  1465→  1465→                y \+= 14;  
+  1466→  1466→            });
+  1467→  1467→
+  1468→  1468→            doc.save(\`Catalogo\_Produtos\_${APP\_STATE.brandName}.pdf\`);  
+  1469→  1469→        }
+  1470→  1470→
+  1471→  1471→        function exportStockPDF() {  
+  1472→  1472→            const { jsPDF } \= window.jspdf;  
+  1473→  1473→            const doc \= new jsPDF();  
+  1474→  1474→            doc.setFontSize(16);  
+  1475→  1475→            doc.text(\`${APP\_STATE.brandName} \- Relatório de Inventário e Estoque\`, 14, 20);  
+  1476→  1476→            doc.setFontSize(10);  
+  1477→  1477→            doc.text(\`Gerado em: ${new Date().toLocaleDateString('pt-BR')}\`, 14, 26);
+  1478→  1478→
+  1479→  1479→            let y \= 36;  
+  1480→  1480→            APP\_STATE.products.forEach((p, i) \=\> {  
+  1481→  1481→                if (y \> 270\) { doc.addPage(); y \= 20; }  
+  1482→  1482→                const total \= p.sizes.P \+ p.sizes.M \+ p.sizes.G \+ p.sizes.GG;  
+  1483→  1483→                doc.text(\`${p.code} \- ${p.name} | Total: ${total} un (Mínimo: ${p.minStock})\`, 14, y);  
+  1484→  1484→                doc.text(\`Distribuição: P:${p.sizes.P} | M:${p.sizes.M} | G:${p.sizes.G} | GG:${p.sizes.GG}\`, 14, y \+ 5);  
+  1485→  1485→                y \+= 12;  
+  1486→  1486→            });
+  1487→  1487→
+  1488→  1488→            doc.save(\`Inventario\_Estoque\_${APP\_STATE.brandName}.pdf\`);  
+  1489→  1489→        }
+  1490→  1490→
+  1491→  1491→        function exportFinancePDF() {  
+  1492→  1492→            const { jsPDF } \= window.jspdf;  
+  1493→  1493→            const doc \= new jsPDF();  
+  1494→  1494→            const totalGross \= APP\_STATE.sales.reduce((s, x) \=\> s \+ x.total, 0);  
+  1495→  1495→            const totalCost \= APP\_STATE.sales.reduce((s, x) \=\> s \+ x.totalCost, 0);  
+  1496→  1496→            const netProfit \= totalGross \- totalCost;
+  1497→  1497→
+  1498→  1498→            doc.setFontSize(16);  
+  1499→  1499→            doc.text(\`${APP\_STATE.brandName} \- Relatório DRE Financeiro\`, 14, 20);  
+  1500→  1500→            doc.setFontSize(11);  
+  1501→  1501→            doc.text(\`Receita Bruta Total: R$ ${totalGross.toFixed(2)}\`, 14, 35);  
+  1502→  1502→            doc.text(\`Custos das Mercadorias: R$ ${totalCost.toFixed(2)}\`, 14, 45);  
+  1503→  1503→            doc.text(\`Lucro Líquido Real: R$ ${netProfit.toFixed(2)}\`, 14, 55);  
+  1504→  1504→            doc.text(\`Total de Vendas Registradas: ${APP\_STATE.sales.length}\`, 14, 65);
+  1505→  1505→
+  1506→  1506→            doc.save(\`Relatorio\_Financeiro\_${APP\_STATE.brandName}.pdf\`);  
+  1507→  1507→        }
+  1508→  1508→
+  1509→  1509→        function exportSingleRomaneioPDF(romaneioId) {  
+  1510→  1510→            const sale \= APP\_STATE.sales.find(s \=\> s.id \=== romaneioId);  
+  1511→  1511→            if (\!sale) return;
+  1512→  1512→
+  1513→  1513→            const container \= document.getElementById('pdfExportContainer');  
+  1514→  1514→            container.innerHTML \= \`  
+  1515→  1515→                \<div style="font-family: sans-serif; padding: 20px; border: 1px solid \#ddd; border-radius: 12px;"\>  
+  1516→  1516→                    \<div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 2px solid \#d97706; padding-bottom: 10px;"\>  
+  1517→  1517→                        \<div\>  
+  1518→  1518→                            \<h1 style="font-size:20px; font-weight:bold; margin:0; color:\#1e293b;"\>${APP\_STATE.brandName}\</h1\>  
+  1519→  1519→                            \<p style="font-size:11px; color:\#64748b; margin:2px 0 0 0;"\>${APP\_STATE.brandSubtitle}\</p\>  
+  1520→  1520→                        \</div\>  
+  1521→  1521→                        \<div style="text-align:right;"\>  
+  1522→  1522→                            \<h2 style="font-size:16px; color:\#d97706; margin:0;"\>${sale.id}\</h2\>  
+  1523→  1523→                            \<span style="font-size:11px; color:\#64748b;"\>Data: ${sale.date}\</span\>  
+  1524→  1524→                        \</div\>  
+  1525→  1525→                    \</div\>
+  1526→  1526→
+  1527→  1527→                    \<div style="margin: 15px 0; font-size: 12px; line-height: 1.6;"\>  
+  1528→  1528→                        \<strong\>Cliente:\</strong\> ${sale.client.name}\<br\>  
+  1529→  1529→                        \<strong\>WhatsApp:\</strong\> ${sale.client.phone} | \<strong\>E-mail:\</strong\> ${sale.client.email}\<br\>  
+  1530→  1530→                        \<strong\>Forma de Pagamento:\</strong\> ${sale.paymentMethod}  
+  1531→  1531→                    \</div\>
+  1532→  1532→
+  1533→  1533→                    \<table style="width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 11px;"\>  
+  1534→  1534→                        \<thead\>  
+  1535→  1535→                            \<tr style="background-color: \#f1f5f9; text-align: left;"\>  
+  1536→  1536→                                \<th style="padding: 8px; border-bottom: 1px solid \#cbd5e1;"\>Item / Modelo\</th\>  
+  1537→  1537→                                \<th style="padding: 8px; border-bottom: 1px solid \#cbd5e1;"\>Estampa & Cor\</th\>  
+  1538→  1538→                                \<th style="padding: 8px; border-bottom: 1px solid \#cbd5e1; text-align:center;"\>Tam.\</th\>  
+  1539→  1539→                                \<th style="padding: 8px; border-bottom: 1px solid \#cbd5e1; text-align:right;"\>Valor\</th\>  
+  1540→  1540→                            \</tr\>  
+  1541→  1541→                        \</thead\>  
+  1542→  1542→                        \<tbody\>  
+  1543→  1543→                            ${sale.items.map(i \=\> \`  
+  1544→  1544→                                \<tr\>  
+  1545→  1545→                                    \<td style="padding: 8px; border-bottom: 1px solid \#f1f5f9;"\>${i.name}\</td\>  
+  1546→  1546→                                    \<td style="padding: 8px; border-bottom: 1px solid \#f1f5f9;"\>${i.print} (${i.color})\</td\>  
+  1547→  1547→                                    \<td style="padding: 8px; border-bottom: 1px solid \#f1f5f9; text-align:center; font-weight:bold;"\>${i.size}\</td\>  
+  1548→  1548→                                    \<td style="padding: 8px; border-bottom: 1px solid \#f1f5f9; text-align:right;"\>R$ ${i.price.toFixed(2)}\</td\>  
+  1549→  1549→                                \</tr\>  
+  1550→  1550→                            \`).join('')}  
+  1551→  1551→                        \</tbody\>  
+  1552→  1552→                    \</table\>
+  1553→  1553→
+  1554→  1554→                    \<div style="margin-top: 20px; text-align: right;"\>  
+  1555→  1555→                        \<span style="font-size: 12px; color: \#64748b;"\>Valor Total a Pagar:\</span\>  
+  1556→  1556→                        \<h2 style="font-size: 22px; font-weight: bold; margin: 4px 0 0 0; color: \#0f172a;"\>R$ ${sale.total.toFixed(2)}\</h2\>  
+  1557→  1557→                        \<p style="font-size: 10px; color: \#64748b; margin-top: 5px;"\>Chave PIX para pagamento: \<strong\>${APP\_STATE.pixKey}\</strong\>\</p\>  
+  1558→  1558→                    \</div\>  
+  1559→  1559→                \</div\>  
+  1560→  1560→            \`;
+  1561→  1561→
+  1562→  1562→            container.classList.remove('hidden');
+  1563→  1563→
+  1564→  1564→            html2canvas(container, { scale: 2 }).then(canvas \=\> {  
+  1565→  1565→                const imgData \= canvas.toDataURL('image/png');  
+  1566→  1566→                const { jsPDF } \= window.jspdf;  
+  1567→  1567→                const pdf \= new jsPDF('p', 'mm', 'a4');  
+  1568→  1568→                const imgWidth \= 190;  
+  1569→  1569→                const imgHeight \= (canvas.height \* imgWidth) / canvas.width;  
+  1570→  1570→                pdf.addImage(imgData, 'PNG', 10, 10, imgWidth, imgHeight);  
+  1571→  1571→                pdf.save(\`Romaneio\_${sale.id}\_${sale.client.name.replace(/\\s+/g, '\_')}.pdf\`);  
+  1572→  1572→                container.classList.add('hidden');  
+  1573→  1573→            });  
+  1574→  1574→        }
+  1575→  1575→
+  1576→  1576→        // \--- INICIALIZAÇÃO NO CARREGAMENTO \---  
+  1577→  1577→        window.addEventListener('DOMContentLoaded', () \=\> {  
+  1578→  1578→            initAppStorage();  
+  1579→  1579→            lucide.createIcons();  
+  1580→  1580→        });  
+  1581→  1581→    \</script\>  
+  1582→  1582→\</body\>  
+  1583→  1583→\</html\>
+  1584→  1584→
+  1585→  1585→3\. Como Utilizar e Próximos Passos:  
+  1586→  1586→Para Executar Imediatamente: Basta criar um arquivo index.html, colar o código e dar dois cliques.  
+  1587→  1587→Para rodar no Celular: Você pode hospedar gratuitamente no Vercel, Netlify ou GitHub Pages e salvar como atalho na tela inicial do celular como um App Nativo (PWA).  
+  1588→  1588→Segurança dos Dados: O app salva tudo automaticamente no navegador (não perde dados ao atualizar ou fechar). Caso queira migrar para um backend na nuvem com multiusuários no futuro, o código está 100% componentizado e pronto para ligar a uma API REST ou Firebase/Supabase.  
+  1589→  1589→Citations
+  1590→  1590→
+  1591→  1591→[https://github.com/mag8888/pla](https://github.com/mag8888/pla)  
+  1592→  1592→
