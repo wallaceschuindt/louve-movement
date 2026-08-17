@@ -5,6 +5,10 @@ import { getSales, getOtherSales } from "@/actions/sale.actions";
 import { getSettings } from "@/actions/settings.actions";
 import { StoreHydrator } from "@/components/louve/StoreHydrator";
 
+// Force dynamic rendering - prevents Next.js from pre-rendering at build time
+export const dynamic = 'force-dynamic';
+
+
 export const metadata: Metadata = {
   title: "Louve Movement - Controle Financeiro e de Estoque",
   description: "Sistema de gestao financeira e estoque para vestuario - Louve Movement",
