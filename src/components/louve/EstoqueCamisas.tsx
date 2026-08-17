@@ -16,7 +16,7 @@ import { exportStockPDF } from '@/lib/export-pdf';
 
 type SizeKey = 'P' | 'M' | 'G' | 'GG';
 
-export function StockTab() {
+export function EstoqueCamisas() {
   const { products, adjustStock, settings } = useLouveStore();
   const [filter, setFilter] = useState<'all' | 'low'>('all');
   const [adjustModal, setAdjustModal] = useState<{ open: boolean; productId: string | null; size: SizeKey | null }>({
@@ -43,8 +43,12 @@ export function StockTab() {
     setAdjustQty('');
   };
 
-  const handleExportPDF = () => {
-    exportStockPDF(settings, products);
+  const handleExportPDF = async () => {
+    try {
+      await exportStockPDF(settings, products, 'Estoque Camisas');
+    } catch (err) {
+      console.error('Erro ao exportar PDF de estoque:', err);
+    }
   };
 
   return (
@@ -123,7 +127,7 @@ export function StockTab() {
                       <td className="p-3.5 text-center font-bold">{p.sizes.G}</td>
                       <td className="p-3.5 text-center font-bold">{p.sizes.GG}</td>
                       <td className="p-3.5 text-center">
-                        <span className={`text-xs font-extrabold ${isLow ? 'text-rose-600' : 'text-slate-800'}`}>{total} un</span>
+                        <span className={'text-xs font-extrabold ' + (isLow ? 'text-rose-600' : 'text-slate-800')}>{total} un</span>
                       </td>
                       <td className="p-3.5 text-center text-slate-500 font-medium">{p.minStock} un</td>
                       <td className="p-3.5 text-center">
@@ -140,7 +144,7 @@ export function StockTab() {
                           variant="outline"
                           size="sm"
                           onClick={() => {
-                            const size = prompt(`Tamanho para reposicao de "${p.name}" (P, M, G ou GG):`)?.toUpperCase() as SizeKey;
+                            const size = prompt('Tamanho para reposicao de "' + p.name + '" (P, M, G ou GG):')?.toUpperCase() as SizeKey;
                             if (['P', 'M', 'G', 'GG'].includes(size || '')) {
                               setAdjustModal({ open: true, productId: p.id, size });
                             }

@@ -12,7 +12,7 @@ import { exportFinancePDF } from '@/lib/export-pdf';
 
 const PAYMENT_COLORS = ['#10b981', '#3b82f6', '#8b5cf6', '#f59e0b'];
 
-export function FinanceTab() {
+export function FinanceiroCamisas() {
   const { sales, settings } = useLouveStore();
   const [mounted, setMounted] = useState(false);
   const [activePeriod, setActivePeriod] = useState('all' as string);
@@ -57,30 +57,36 @@ export function FinanceTab() {
     .map(([k, v]) => ({ month: k, Receita: v.revenue, Lucro: v.profit }));
 
   const handleExportPDF = async () => {
-    let chartImgMonthly = '';
-    let chartImgPayment = '';
     try {
-      if (monthlyChartRef.current) {
-        const html2canvas = (await import('html2canvas')).default;
-        const canvas = await html2canvas(monthlyChartRef.current, { backgroundColor: '#ffffff', scale: 2 });
-        chartImgMonthly = canvas.toDataURL('image/png');
+      let chartImgMonthly = '';
+      let chartImgPayment = '';
+      try {
+        if (monthlyChartRef.current) {
+          const html2canvas = (await import('html2canvas')).default;
+          const canvas = await html2canvas(monthlyChartRef.current, { backgroundColor: '#ffffff', scale: 2 });
+          chartImgMonthly = canvas.toDataURL('image/png');
+        }
+        if (paymentChartRef.current) {
+          const html2canvas = (await import('html2canvas')).default;
+          const canvas = await html2canvas(paymentChartRef.current, { backgroundColor: '#ffffff', scale: 2 });
+          chartImgPayment = canvas.toDataURL('image/png');
+        }
+      } catch (chartErr) {
+        console.error('Erro ao capturar graficos:', chartErr);
       }
-      if (paymentChartRef.current) {
-        const html2canvas = (await import('html2canvas')).default;
-        const canvas = await html2canvas(paymentChartRef.current, { backgroundColor: '#ffffff', scale: 2 });
-        chartImgPayment = canvas.toDataURL('image/png');
-      }
-    } catch {}
-    exportFinancePDF(settings, {
-      totalGross,
-      totalCost,
-      netProfit,
-      margin,
-      ticketMedio: filteredSales.length > 0 ? totalGross / filteredSales.length : 0,
-      salesCount: filteredSales.length,
-      chartImgMonthly,
-      chartImgPayment,
-    });
+      await exportFinancePDF(settings, {
+        totalGross,
+        totalCost,
+        netProfit,
+        margin,
+        ticketMedio: filteredSales.length > 0 ? totalGross / filteredSales.length : 0,
+        salesCount: filteredSales.length,
+        chartImgMonthly,
+        chartImgPayment,
+      }, 'Painel Financeiro - Camisas');
+    } catch (err) {
+      console.error('Erro ao exportar PDF financeiro:', err);
+    }
   };
 
   if (!mounted) {

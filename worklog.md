@@ -1,26 +1,24 @@
-# Worklog - Louve Movement ERP/PDV
+# Worklog - Louve Movement ERP
 
 ---
 Task ID: 1
-Agent: Main Agent
-Task: Corrigir bugs pendentes do sistema Louve Movement
+Agent: Main
+Task: Reestruturacao completa do sistema - 2 categorias + Dashboard Geral
 
 Work Log:
-- Analisei todos os arquivos do sistema para identificar bugs
-- Identifiquei que login, forgot password, quantidade no romaneio e logo na sidebar ja estavam corrigidos
-- Corrigi bug de isolamento de imagem no ProductModal: o populateForm() nao era chamado quando o dialog abria via estado programatico (Radix Dialog nao dispara onOpenChange quando open muda via prop). Solucao: adicionei useEffect que observa productModalOpen e editingProductId para popular o form corretamente. Também adicionei renderizacao condicional da preview de imagem.
-- Corrigi StockTab: adicionada verificacao condicional para imagem nula (evita img com src vazio)
-- Corrigi WhatsApp: mudado de enviar mensagem pre-preenchida para cliente especifico para apenas abrir o app (window.open('https://wa.me/'))
-- Melhorei exportacao PDF em todos os modulos:
-  - Adicionei funcao waitForImages que espera todas as imagens carregarem antes de capturar com html2canvas
-  - Adicionei delay de 300ms apos carregamento para garantir renderizacao completa
-  - Corrigi logica de multi-pagina PDF usando canvas slicing (cria sub-canvases por pagina em vez de offset negativo)
-  - Adicionei crossorigin="anonymous" em todas as tags img nos PDFs
-  - Refatorei RomaneioTab para usar helper functions compartilhados (renderHtmlToPDF, canvasToPDF, waitForImages)
-- Reescrevi DashboardTab.tsx e FinanceTab.tsx para evitar possiveis problemas de parsing com template literals no Turbopack
-- Build passou com sucesso, servidor iniciou e responde HTTP 200
+- Leitura completa de todos os arquivos existentes (types, store, components, pdf lib, page)
+- Reescrita de /src/types/louve.ts com novos tipos: OtherProduct, OtherCartItem, OtherSaleRecord, TabId expandido com 13 abas
+- Reescrita de /src/store/louve-store.ts com suporte dual (camisas + outros produtos), seed data para 3 produtos exemplo
+- Reescrita de /src/lib/export-pdf.ts com PDFs dinamicos via import() e wait para imagens, funcoes para todos os tipos de relatorio
+- Criacao de 13 novos componentes: DashboardGeral, DashboardCamisas, DashboardOutros, CamisasGrade, EstoqueCamisas, RomaneioCamisas, RomaneioCamisasModal, FinanceiroCamisas, OutrosProdutosTab, EstoqueProdutosTab, RomaneioProdutosTab, RomaneioProdutosModal, FinanceiroProdutosTab, FinanceiroGeral
+- Reescrita de /src/app/page.tsx com sidebar agrupada em 4 grupos (GERAL, CAMISAS, OUTROS PRODUTOS, SISTEMA)
+- Remocao dos 6 arquivos antigos nao mais utilizados
+- Build final: sucesso sem erros
 
 Stage Summary:
-- 5 correcoes aplicadas: image isolation, null image, WhatsApp, PDF exports, build fixes
-- Todos os arquivos compilam sem erros
-- Servidor Next.js rodando em localhost:3000
+- Sistema reestruturado com 13 abas organizadas em 4 grupos na sidebar
+- Todos os PDFs usam async/await com try/catch (corrigido bug de PDF nao funcionar)
+- WhatsApp agora e por-romaneio (abre wa.me com texto pre-preenchido para escolher destino)
+- CRUD completo em romaneios (ver, criar, editar via modal, excluir, exportar individual e todos)
+- 3 produtos exemplo cadastrados (caneca, chaveiro, caneta)
+- Financeiro GERAL consolida dados de camisas e outros produtos

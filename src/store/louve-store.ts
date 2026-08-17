@@ -1,7 +1,7 @@
 'use client';
 
 import { create } from 'zustand';
-import type { Product, SaleRecord, CartItem, AppSettings, TabId } from '@/types/louve';
+import type { Product, SaleRecord, CartItem, OtherProduct, OtherSaleRecord, OtherCartItem, AppSettings, TabId } from '@/types/louve';
 
 const STORAGE_KEY = 'LOUVE_MOVEMENT_DATA';
 
@@ -12,9 +12,15 @@ interface LouveState {
   products: Product[];
   sales: SaleRecord[];
   currentCart: CartItem[];
+  otherProducts: OtherProduct[];
+  otherSales: OtherSaleRecord[];
+  otherCart: OtherCartItem[];
   productModalOpen: boolean;
+  otherProductModalOpen: boolean;
   romaneioModalOpen: boolean;
+  otherRomaneioModalOpen: boolean;
   editingProductId: string | null;
+  editingOtherProductId: string | null;
   password: string;
 
   login: (email: string, pass: string) => boolean;
@@ -35,6 +41,21 @@ interface LouveState {
   openRomaneioModal: () => void;
   closeRomaneioModal: () => void;
   adjustStock: (productId: string, size: 'P' | 'M' | 'G' | 'GG', qty: number) => void;
+  addOtherProduct: (product: OtherProduct) => void;
+  updateOtherProduct: (product: OtherProduct) => void;
+  deleteOtherProduct: (id: string) => void;
+  adjustOtherStock: (productId: string, qty: number) => void;
+  openOtherProductModal: (productId?: string) => void;
+  closeOtherProductModal: () => void;
+  addToOtherCart: (item: OtherCartItem) => void;
+  removeFromOtherCart: (index: number) => void;
+  updateOtherCartItemQty: (index: number, qty: number) => void;
+  clearOtherCart: () => void;
+  finalizeOtherSale: (sale: OtherSaleRecord) => void;
+  openOtherRomaneioModal: () => void;
+  closeOtherRomaneioModal: () => void;
+  deleteSale: (id: string) => void;
+  deleteOtherSale: (id: string) => void;
   exportData: () => string;
   importData: (json: string) => void;
 }
@@ -73,6 +94,51 @@ const seedProducts: Product[] = [
   },
 ];
 
+const seedOtherProducts: OtherProduct[] = [
+  {
+    id: 'outro_1',
+    code: 'LM-CN-01',
+    name: 'Caneca Louve Movement',
+    description: 'Caneca ceramica 350ml com logo borda dourada',
+    category: 'Caneca',
+    cost: 12.0,
+    price: 39.9,
+    minStock: 10,
+    stock: 25,
+    unitType: 'unidade',
+    kitSize: 1,
+    image: '',
+  },
+  {
+    id: 'outro_2',
+    code: 'LM-CH-01',
+    name: 'Chaveiro Metal Lion',
+    description: 'Chaveiro em metal banhado a ouro com logo esmaltado',
+    category: 'Chaveiro',
+    cost: 8.0,
+    price: 24.9,
+    minStock: 15,
+    stock: 40,
+    unitType: 'unidade',
+    kitSize: 1,
+    image: '',
+  },
+  {
+    id: 'outro_3',
+    code: 'LM-CT-01',
+    name: 'Caneta Executive Louve',
+    description: 'Caneta esferografica premium corpo preto com detalhes dourados',
+    category: 'Caneta',
+    cost: 5.0,
+    price: 19.9,
+    minStock: 20,
+    stock: 60,
+    unitType: 'unidade',
+    kitSize: 1,
+    image: '',
+  },
+];
+
 function loadFromStorage() {
   if (typeof window === 'undefined') return null;
   try {
@@ -83,13 +149,22 @@ function loadFromStorage() {
   }
 }
 
-function saveToStorage(state: { settings: AppSettings; products: Product[]; sales: SaleRecord[]; password?: string }) {
+function saveToStorage(state: {
+  settings: AppSettings;
+  products: Product[];
+  sales: SaleRecord[];
+  otherProducts: OtherProduct[];
+  otherSales: OtherSaleRecord[];
+  password?: string;
+}) {
   if (typeof window === 'undefined') return;
   try {
     const toSave: Record<string, unknown> = {
       settings: state.settings,
       products: state.products,
       sales: state.sales,
+      otherProducts: state.otherProducts,
+      otherSales: state.otherSales,
     };
     if (state.password) toSave.password = state.password;
     localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
@@ -102,14 +177,20 @@ export const useLouveStore = create<LouveState>((set, get) => {
   const saved = loadFromStorage();
   const initialState = {
     isLoggedIn: false,
-    activeTab: 'dashboard' as TabId,
+    activeTab: 'dashboard-geral' as TabId,
     settings: saved?.settings || defaultSettings,
     products: saved?.products || seedProducts,
     sales: saved?.sales || [],
     currentCart: [] as CartItem[],
+    otherProducts: saved?.otherProducts || seedOtherProducts,
+    otherSales: saved?.otherSales || [],
+    otherCart: [] as OtherCartItem[],
     productModalOpen: false,
+    otherProductModalOpen: false,
     romaneioModalOpen: false,
+    otherRomaneioModalOpen: false,
     editingProductId: null as string | null,
+    editingOtherProductId: null as string | null,
     password: (saved as Record<string, unknown>)?.password as string || '123456',
   };
 
@@ -229,9 +310,108 @@ export const useLouveStore = create<LouveState>((set, get) => {
         return { products };
       }),
 
+    addOtherProduct: (product) =>
+      set((s) => {
+        const otherProducts = [...s.otherProducts, product];
+        saveToStorage({ ...s, otherProducts });
+        return { otherProducts };
+      }),
+
+    updateOtherProduct: (product) =>
+      set((s) => {
+        const otherProducts = s.otherProducts.map((p) => (p.id === product.id ? product : p));
+        saveToStorage({ ...s, otherProducts });
+        return { otherProducts };
+      }),
+
+    deleteOtherProduct: (id) =>
+      set((s) => {
+        const otherProducts = s.otherProducts.filter((p) => p.id !== id);
+        saveToStorage({ ...s, otherProducts });
+        return { otherProducts };
+      }),
+
+    adjustOtherStock: (productId, qty) =>
+      set((s) => {
+        const otherProducts = s.otherProducts.map((p) => {
+          if (p.id === productId) {
+            return { ...p, stock: Math.max(0, p.stock + qty) };
+          }
+          return p;
+        });
+        saveToStorage({ ...s, otherProducts });
+        return { otherProducts };
+      }),
+
+    openOtherProductModal: (productId) =>
+      set({ otherProductModalOpen: true, editingOtherProductId: productId || null }),
+    closeOtherProductModal: () =>
+      set({ otherProductModalOpen: false, editingOtherProductId: null }),
+
+    addToOtherCart: (item) =>
+      set((s) => {
+        const existing = s.otherCart.findIndex((c) => c.productId === item.productId);
+        if (existing >= 0) {
+          const updated = [...s.otherCart];
+          updated[existing] = { ...updated[existing], qty: updated[existing].qty + item.qty };
+          return { otherCart: updated };
+        }
+        return { otherCart: [...s.otherCart, item] };
+      }),
+
+    removeFromOtherCart: (index) =>
+      set((s) => ({ otherCart: s.otherCart.filter((_, i) => i !== index) })),
+
+    updateOtherCartItemQty: (index, qty) =>
+      set((s) => {
+        if (qty <= 0) return { otherCart: s.otherCart.filter((_, i) => i !== index) };
+        const updated = [...s.otherCart];
+        updated[index] = { ...updated[index], qty };
+        return { otherCart: updated };
+      }),
+
+    clearOtherCart: () => set({ otherCart: [] }),
+
+    finalizeOtherSale: (sale) =>
+      set((s) => {
+        const otherProducts = s.otherProducts.map((p) => {
+          const soldItem = sale.items.find((i) => i.productId === p.id);
+          if (soldItem) {
+            return { ...p, stock: Math.max(0, p.stock - soldItem.qty) };
+          }
+          return p;
+        });
+        const otherSales = [sale, ...s.otherSales];
+        saveToStorage({ ...s, otherProducts, otherSales });
+        return { otherSales, otherProducts, otherCart: [] };
+      }),
+
+    openOtherRomaneioModal: () => set({ otherRomaneioModalOpen: true, otherCart: [] }),
+    closeOtherRomaneioModal: () => set({ otherRomaneioModalOpen: false, otherCart: [] }),
+
+    deleteSale: (id) =>
+      set((s) => {
+        const sales = s.sales.filter((sale) => sale.id !== id);
+        saveToStorage({ ...s, sales });
+        return { sales };
+      }),
+
+    deleteOtherSale: (id) =>
+      set((s) => {
+        const otherSales = s.otherSales.filter((sale) => sale.id !== id);
+        saveToStorage({ ...s, otherSales });
+        return { otherSales };
+      }),
+
     exportData: () => {
       const s = get();
-      return JSON.stringify({ settings: s.settings, products: s.products, sales: s.sales }, null, 2);
+      return JSON.stringify({
+        settings: s.settings,
+        products: s.products,
+        sales: s.sales,
+        otherProducts: s.otherProducts,
+        otherSales: s.otherSales,
+      }, null, 2);
     },
 
     importData: (json) => {
@@ -242,6 +422,8 @@ export const useLouveStore = create<LouveState>((set, get) => {
             settings: data.settings || s.settings,
             products: data.products || s.products,
             sales: data.sales || s.sales,
+            otherProducts: data.otherProducts || s.otherProducts,
+            otherSales: data.otherSales || s.otherSales,
           };
           saveToStorage({ ...s, ...updated });
           return updated;

@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { useLouveStore } from '@/store/louve-store';
-import { Plus, FileText, Edit3, Trash2, Search, Upload, Download } from 'lucide-react';
-import type { Product } from '@/types/louve';
-import { exportProductsPDF } from '@/lib/export-pdf';
+import { Plus, Search, Edit3, Trash2, Upload, Download, FileText } from 'lucide-react';
+import type { OtherProduct } from '@/types/louve';
+import { exportOtherProductsPDF } from '@/lib/export-pdf';
 import {
   Dialog,
   DialogContent,
@@ -15,20 +15,28 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
-export function ProductsTab() {
-  const { products, openProductModal, deleteProduct, settings } = useLouveStore();
+const CATEGORIES = ['Caneca', 'Caneta', 'Chaveiro', 'Bone', 'Mochila', 'Adesivo', 'Outro'];
+const UNIT_TYPES = ['unidade', 'caixa', 'kit'] as const;
+
+export function OutrosProdutosTab() {
+  const { otherProducts, openOtherProductModal, settings } = useLouveStore();
   const [search, setSearch] = useState('');
 
-  const filtered = products.filter(
+  const filtered = otherProducts.filter(
     (p) =>
       p.name.toLowerCase().includes(search.toLowerCase()) ||
-      p.print.toLowerCase().includes(search.toLowerCase()) ||
-      p.color.toLowerCase().includes(search.toLowerCase()) ||
-      p.code.toLowerCase().includes(search.toLowerCase())
+      p.code.toLowerCase().includes(search.toLowerCase()) ||
+      p.category.toLowerCase().includes(search.toLowerCase()) ||
+      p.description.toLowerCase().includes(search.toLowerCase())
   );
 
-  const handleExportPDF = () => {
-    exportProductsPDF(settings, products);
+  const handleExportPDF = async () => {
+    try {
+      await exportOtherProductsPDF(settings, otherProducts);
+    } catch (err) {
+      console.error(err);
+      alert('Erro ao exportar catalogo PDF.');
+    }
   };
 
   return (
@@ -40,7 +48,7 @@ export function ProductsTab() {
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Buscar por nome, estampa, cor ou codigo..."
+            placeholder="Buscar por nome, codigo, categoria ou descricao..."
             className="text-xs bg-white border border-slate-200 rounded-xl pl-9 pr-4 py-2.5 w-72 focus:outline-none focus:border-amber-500 shadow-sm"
           />
         </div>
@@ -55,10 +63,10 @@ export function ProductsTab() {
           </Button>
           <Button
             size="sm"
-            onClick={() => openProductModal()}
+            onClick={() => openOtherProductModal()}
             className="gap-2 text-xs bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold"
           >
-            <Plus className="w-4 h-4" /> Cadastrar Camisa
+            <Plus className="w-4 h-4" /> Cadastrar Produto
           </Button>
         </div>
       </div>
@@ -69,22 +77,26 @@ export function ProductsTab() {
             <thead>
               <tr className="bg-slate-50 border-b border-slate-200">
                 <th className="p-3.5 text-left font-bold text-slate-600">Produto</th>
-                <th className="p-3.5 text-center font-bold text-slate-600">Grade (P / M / G / GG)</th>
-                <th className="p-3.5 text-right font-bold text-slate-600">Preco / Custo</th>
+                <th className="p-3.5 text-left font-bold text-slate-600">Codigo</th>
+                <th className="p-3.5 text-left font-bold text-slate-600">Categoria</th>
+                <th className="p-3.5 text-left font-bold text-slate-600">Descricao</th>
+                <th className="p-3.5 text-right font-bold text-slate-600">Custo</th>
+                <th className="p-3.5 text-right font-bold text-slate-600">Preco</th>
                 <th className="p-3.5 text-right font-bold text-slate-600">Lucro</th>
+                <th className="p-3.5 text-center font-bold text-slate-600">Estoque</th>
+                <th className="p-3.5 text-center font-bold text-slate-600">Tipo</th>
                 <th className="p-3.5 text-center font-bold text-slate-600">Acoes</th>
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="p-8 text-center text-slate-400">
+                  <td colSpan={10} className="p-8 text-center text-slate-400">
                     Nenhum produto cadastrado.
                   </td>
                 </tr>
               ) : (
                 filtered.map((p) => {
-                  const totalStock = p.sizes.P + p.sizes.M + p.sizes.G + p.sizes.GG;
                   const profit = p.price - p.cost;
                   const margin = p.price > 0 ? ((profit / p.price) * 100).toFixed(0) : '0';
                   return (
@@ -96,41 +108,37 @@ export function ProductsTab() {
                           ) : (
                             <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400 text-[10px]">SEM FOTO</div>
                           )}
-                          <div>
-                            <div className="font-bold text-slate-800">{p.name}</div>
-                            <div className="text-[11px] text-slate-400">{p.code} &bull; {p.print}</div>
-                            <div className="text-[11px] text-slate-400">{p.color}</div>
-                          </div>
+                          <div className="font-bold text-slate-800">{p.name}</div>
                         </div>
                       </td>
-                      <td className="p-3.5 text-center">
-                        <div className="flex items-center justify-center gap-1.5">
-                          <span className="px-1.5 py-0.5 bg-slate-100 rounded">P: {p.sizes.P}</span>
-                          <span className="px-1.5 py-0.5 bg-slate-100 rounded">M: {p.sizes.M}</span>
-                          <span className="px-1.5 py-0.5 bg-slate-100 rounded">G: {p.sizes.G}</span>
-                          <span className="px-1.5 py-0.5 bg-slate-100 rounded">GG: {p.sizes.GG}</span>
-                        </div>
-                        <div className="text-[10px] text-slate-400 mt-1">Total: {totalStock} pecas</div>
+                      <td className="p-3.5 font-mono text-slate-500">{p.code}</td>
+                      <td className="p-3.5">
+                        <span className="px-2 py-0.5 bg-slate-100 text-slate-700 rounded-md font-semibold text-[10px]">{p.category}</span>
                       </td>
-                      <td className="p-3.5 text-right">
-                        <div className="font-bold text-slate-900">R$ {p.price.toFixed(2)}</div>
-                        <div className="text-[10px] text-slate-400">Custo: R$ {p.cost.toFixed(2)}</div>
-                      </td>
+                      <td className="p-3.5 text-slate-500 max-w-xs truncate">{p.description}</td>
+                      <td className="p-3.5 text-right text-slate-500">R$ {p.cost.toFixed(2)}</td>
+                      <td className="p-3.5 text-right font-bold text-slate-900">R$ {p.price.toFixed(2)}</td>
                       <td className="p-3.5 text-right">
                         <div className="font-bold text-emerald-600">R$ {profit.toFixed(2)}</div>
                         <div className="text-[10px] text-emerald-500 font-semibold">{margin}% margem</div>
                       </td>
+                      <td className="p-3.5 text-center font-bold">{p.stock}</td>
+                      <td className="p-3.5 text-center">
+                        <span className="text-[10px] text-slate-500">{p.unitType}</span>
+                      </td>
                       <td className="p-3.5 text-center">
                         <div className="flex items-center justify-center gap-2">
                           <button
-                            onClick={() => openProductModal(p.id)}
+                            onClick={() => openOtherProductModal(p.id)}
                             className="p-1.5 hover:bg-slate-100 text-slate-600 rounded-lg cursor-pointer"
                           >
                             <Edit3 className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => {
-                              if (confirm(`Excluir "${p.name}"?`)) deleteProduct(p.id);
+                              if (confirm('Excluir "' + p.name + '"?')) {
+                                useLouveStore.getState().deleteOtherProduct(p.id);
+                              }
                             }}
                             className="p-1.5 hover:bg-rose-50 text-rose-500 rounded-lg cursor-pointer"
                           >
@@ -147,31 +155,71 @@ export function ProductsTab() {
         </div>
       </div>
 
-      <ProductModal />
+      <OtherProductModal />
     </section>
   );
 }
 
-function ProductModal() {
-  const { productModalOpen, closeProductModal, editingProductId, products, addProduct, updateProduct } =
-    useLouveStore();
+function OtherProductModal() {
+  const {
+    otherProductModalOpen,
+    closeOtherProductModal,
+    editingOtherProductId,
+    otherProducts,
+    addOtherProduct,
+    updateOtherProduct,
+  } = useLouveStore();
+
   const [form, setForm] = useState({
-    name: '',
     code: '',
-    print: '',
-    color: '',
+    name: '',
+    description: '',
+    category: 'Caneca',
     cost: '',
     price: '',
     minStock: '',
-    P: '',
-    M: '',
-    G: '',
-    GG: '',
+    stock: '',
+    unitType: 'unidade' as 'unidade' | 'caixa' | 'kit',
+    kitSize: '',
     image: '',
   });
 
-  const isEditing = !!editingProductId;
-  const editingProduct = isEditing ? products.find((p) => p.id === editingProductId) : null;
+  const isEditing = !!editingOtherProductId;
+  const editingProduct = isEditing ? otherProducts.find((p) => p.id === editingOtherProductId) : null;
+
+  useEffect(() => {
+    if (otherProductModalOpen) {
+      if (editingProduct) {
+        setForm({
+          code: editingProduct.code,
+          name: editingProduct.name,
+          description: editingProduct.description,
+          category: editingProduct.category,
+          cost: String(editingProduct.cost),
+          price: String(editingProduct.price),
+          minStock: String(editingProduct.minStock),
+          stock: String(editingProduct.stock),
+          unitType: editingProduct.unitType,
+          kitSize: String(editingProduct.kitSize),
+          image: editingProduct.image || '',
+        });
+      } else {
+        setForm({
+          code: 'LM-OP-' + String(otherProducts.length + 1).padStart(2, '0'),
+          name: '',
+          description: '',
+          category: 'Caneca',
+          cost: '',
+          price: '',
+          minStock: '5',
+          stock: '0',
+          unitType: 'unidade',
+          kitSize: '1',
+          image: '',
+        });
+      }
+    }
+  }, [otherProductModalOpen, editingOtherProductId]);
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
@@ -182,30 +230,27 @@ function ProductModal() {
       return;
     }
 
-    const productData: Product = {
-      id: editingProduct?.id || `prod_${Date.now()}`,
+    const productData: OtherProduct = {
+      id: editingProduct?.id || 'outro_' + Date.now(),
       code: form.code,
       name: form.name,
-      print: form.print,
-      color: form.color,
+      description: form.description,
+      category: form.category,
       cost: costNum,
       price: priceNum,
       minStock: parseInt(form.minStock) || 5,
-      sizes: {
-        P: parseInt(form.P) || 0,
-        M: parseInt(form.M) || 0,
-        G: parseInt(form.G) || 0,
-        GG: parseInt(form.GG) || 0,
-      },
+      stock: isEditing ? editingProduct!.stock : (parseInt(form.stock) || 0),
+      unitType: form.unitType,
+      kitSize: (form.unitType === 'caixa' || form.unitType === 'kit') ? (parseInt(form.kitSize) || 1) : 1,
       image: form.image,
     };
 
     if (isEditing) {
-      updateProduct(productData);
+      updateOtherProduct(productData);
     } else {
-      addProduct(productData);
+      addOtherProduct(productData);
     }
-    closeProductModal();
+    closeOtherProductModal();
   };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -218,60 +263,24 @@ function ProductModal() {
     reader.readAsDataURL(file);
   };
 
-  // Populate form when dialog opens (programmatic open doesn't trigger onOpenChange)
-  useEffect(() => {
-    if (productModalOpen) {
-      if (editingProduct) {
-        setForm({
-          name: editingProduct.name,
-          code: editingProduct.code,
-          print: editingProduct.print,
-          color: editingProduct.color,
-          cost: String(editingProduct.cost),
-          price: String(editingProduct.price),
-          minStock: String(editingProduct.minStock),
-          P: String(editingProduct.sizes.P),
-          M: String(editingProduct.sizes.M),
-          G: String(editingProduct.sizes.G),
-          GG: String(editingProduct.sizes.GG),
-          image: editingProduct.image || '',
-        });
-      } else {
-        setForm({
-          name: '',
-          code: `LM-ST-${String(products.length + 1).padStart(2, '0')}`,
-          print: '',
-          color: '',
-          cost: '',
-          price: '',
-          minStock: '5',
-          P: '0',
-          M: '0',
-          G: '0',
-          GG: '0',
-          image: '',
-        });
-      }
-    }
-  }, [productModalOpen, editingProductId]);
-
   const handleOpenChange = (open: boolean) => {
     if (!open) {
-      closeProductModal();
+      closeOtherProductModal();
     }
   };
 
+  const showKitSize = form.unitType === 'caixa' || form.unitType === 'kit';
+
   return (
-    <Dialog open={productModalOpen} onOpenChange={handleOpenChange}>
+    <Dialog open={otherProductModalOpen} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl">
         <DialogHeader>
           <DialogTitle className="text-base font-bold text-slate-800">
-            {isEditing ? 'Editar Camisa' : 'Cadastrar Nova Camisa'}
+            {isEditing ? 'Editar Produto' : 'Cadastrar Novo Produto'}
           </DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSave} className="mt-4 space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {/* Image Upload */}
             <div className="sm:col-span-1 flex flex-col items-center justify-center border-2 border-dashed border-slate-200 rounded-2xl p-4 bg-slate-50 text-center">
               {form.image ? (
                 <img src={form.image} alt="Preview" className="w-24 h-24 object-cover rounded-xl mb-2 shadow-sm" />
@@ -285,7 +294,6 @@ function ProductModal() {
               </label>
             </div>
 
-            {/* Basic Info */}
             <div className="sm:col-span-2 space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 <div>
@@ -294,44 +302,58 @@ function ProductModal() {
                     value={form.code}
                     onChange={(e) => setForm((f) => ({ ...f, code: e.target.value }))}
                     className="text-xs mt-1"
-                    placeholder="LM-ST-01"
+                    placeholder="LM-OP-01"
                   />
                 </div>
                 <div>
-                  <Label className="text-[11px] font-bold text-slate-600">Nome do Modelo</Label>
+                  <Label className="text-[11px] font-bold text-slate-600">Nome do Produto</Label>
                   <Input
                     value={form.name}
                     onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
                     className="text-xs mt-1"
-                    placeholder="Camisa Oversized"
+                    placeholder="Caneca Louve Movement"
                     required
                   />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <Label className="text-[11px] font-bold text-slate-600">Estampa / Arte</Label>
-                  <Input
-                    value={form.print}
-                    onChange={(e) => setForm((f) => ({ ...f, print: e.target.value }))}
-                    className="text-xs mt-1"
-                    placeholder="Leao de Juda Costas"
-                  />
+                  <Label className="text-[11px] font-bold text-slate-600">Categoria</Label>
+                  <select
+                    value={form.category}
+                    onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
+                    className="w-full text-xs bg-white border border-slate-200 rounded-xl p-2.5 mt-1 focus:outline-none"
+                  >
+                    {CATEGORIES.map((c) => (
+                      <option key={c} value={c}>{c}</option>
+                    ))}
+                  </select>
                 </div>
                 <div>
-                  <Label className="text-[11px] font-bold text-slate-600">Cor</Label>
-                  <Input
-                    value={form.color}
-                    onChange={(e) => setForm((f) => ({ ...f, color: e.target.value }))}
-                    className="text-xs mt-1"
-                    placeholder="Preto Mineral"
-                  />
+                  <Label className="text-[11px] font-bold text-slate-600">Tipo Unitario</Label>
+                  <select
+                    value={form.unitType}
+                    onChange={(e) => setForm((f) => ({ ...f, unitType: e.target.value as 'unidade' | 'caixa' | 'kit' }))}
+                    className="w-full text-xs bg-white border border-slate-200 rounded-xl p-2.5 mt-1 focus:outline-none"
+                  >
+                    {UNIT_TYPES.map((t) => (
+                      <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>
+                    ))}
+                  </select>
                 </div>
+              </div>
+              <div>
+                <Label className="text-[11px] font-bold text-slate-600">Descricao</Label>
+                <Input
+                  value={form.description}
+                  onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+                  className="text-xs mt-1"
+                  placeholder="Caneca ceramica 350ml com logo borda dourada"
+                />
               </div>
             </div>
           </div>
 
-          {/* Financial Info */}
           <div className="bg-slate-50 rounded-2xl p-4 space-y-3">
             <h4 className="text-[11px] font-bold text-slate-700 uppercase tracking-wide">Financeiro</h4>
             <div className="grid grid-cols-3 gap-3">
@@ -343,7 +365,7 @@ function ProductModal() {
                   value={form.cost}
                   onChange={(e) => setForm((f) => ({ ...f, cost: e.target.value }))}
                   className="text-xs mt-1"
-                  placeholder="38.00"
+                  placeholder="12.00"
                   required
                 />
               </div>
@@ -355,7 +377,7 @@ function ProductModal() {
                   value={form.price}
                   onChange={(e) => setForm((f) => ({ ...f, price: e.target.value }))}
                   className="text-xs mt-1"
-                  placeholder="99.90"
+                  placeholder="39.90"
                   required
                 />
               </div>
@@ -366,7 +388,7 @@ function ProductModal() {
                   value={form.minStock}
                   onChange={(e) => setForm((f) => ({ ...f, minStock: e.target.value }))}
                   className="text-xs mt-1"
-                  placeholder="5"
+                  placeholder="10"
                 />
               </div>
             </div>
@@ -385,27 +407,38 @@ function ProductModal() {
             )}
           </div>
 
-          {/* Size Grid */}
           <div className="bg-slate-50 rounded-2xl p-4 space-y-3">
-            <h4 className="text-[11px] font-bold text-slate-700 uppercase tracking-wide">Grade de Tamanhos (Estoque Inicial)</h4>
-            <div className="grid grid-cols-4 gap-3">
-              {(['P', 'M', 'G', 'GG'] as const).map((size) => (
-                <div key={size}>
-                  <Label className="text-[11px] font-bold text-slate-600 text-center block">Tam. {size}</Label>
+            <h4 className="text-[11px] font-bold text-slate-700 uppercase tracking-wide">Estoque Inicial</h4>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-[11px] font-bold text-slate-600">Quantidade em Estoque</Label>
+                <Input
+                  type="number"
+                  value={form.stock}
+                  onChange={(e) => setForm((f) => ({ ...f, stock: e.target.value }))}
+                  className="text-xs mt-1"
+                  placeholder="0"
+                  disabled={isEditing}
+                />
+              </div>
+              {showKitSize && (
+                <div>
+                  <Label className="text-[11px] font-bold text-slate-600">Itens por {form.unitType === 'caixa' ? 'Caixa' : 'Kit'}</Label>
                   <Input
                     type="number"
-                    value={form[size]}
-                    onChange={(e) => setForm((f) => ({ ...f, [size]: e.target.value }))}
-                    className="text-xs mt-1 text-center"
-                    placeholder="0"
+                    value={form.kitSize}
+                    onChange={(e) => setForm((f) => ({ ...f, kitSize: e.target.value }))}
+                    className="text-xs mt-1"
+                    placeholder="1"
+                    min="1"
                   />
                 </div>
-              ))}
+              )}
             </div>
           </div>
 
           <div className="flex justify-end gap-3 pt-2">
-            <Button type="button" variant="ghost" size="sm" onClick={closeProductModal}>
+            <Button type="button" variant="ghost" size="sm" onClick={closeOtherProductModal}>
               Cancelar
             </Button>
             <Button

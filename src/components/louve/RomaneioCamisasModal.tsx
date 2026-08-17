@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 
-export function RomaneioModal() {
+export function RomaneioCamisasModal() {
   const {
     romaneioModalOpen,
     closeRomaneioModal,
@@ -40,7 +40,7 @@ export function RomaneioModal() {
     if (!selectedProd) return;
     if (addQty <= 0) return;
     if (addQty > maxQty) {
-      alert(`Estoque insuficiente! Disponivel: ${maxQty} un de tamanho ${selectedSize}`);
+      alert('Estoque insuficiente! Disponivel: ' + maxQty + ' un de tamanho ' + selectedSize);
       return;
     }
     const item: CartItem = {
@@ -147,10 +147,10 @@ export function RomaneioModal() {
               <div className="sm:col-span-2">
                 <Label className="text-[11px] font-semibold text-slate-600">Tam.</Label>
                 <select value={selectedSize} onChange={(e) => { setSelectedSize(e.target.value as 'P' | 'M' | 'G' | 'GG'); setAddQty(1); }} className="w-full text-xs bg-white border border-slate-200 rounded-xl p-2 mt-1 focus:outline-none">
-                  <option value="P">P {selectedProd ? `(Disp: ${selectedProd.sizes.P})` : ''}</option>
-                  <option value="M">M {selectedProd ? `(Disp: ${selectedProd.sizes.M})` : ''}</option>
-                  <option value="G">G {selectedProd ? `(Disp: ${selectedProd.sizes.G})` : ''}</option>
-                  <option value="GG">GG {selectedProd ? `(Disp: ${selectedProd.sizes.GG})` : ''}</option>
+                  <option value="P">P {selectedProd ? '(Disp: ' + selectedProd.sizes.P + ')' : ''}</option>
+                  <option value="M">M {selectedProd ? '(Disp: ' + selectedProd.sizes.M + ')' : ''}</option>
+                  <option value="G">G {selectedProd ? '(Disp: ' + selectedProd.sizes.G + ')' : ''}</option>
+                  <option value="GG">GG {selectedProd ? '(Disp: ' + selectedProd.sizes.GG + ')' : ''}</option>
                 </select>
               </div>
               <div className="sm:col-span-3">

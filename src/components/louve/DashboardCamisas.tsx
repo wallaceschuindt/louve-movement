@@ -12,7 +12,7 @@ import { exportDashboardPDF } from '@/lib/export-pdf';
 
 const SIZE_COLORS = ['#38bdf8', '#818cf8', '#f59e0b', '#ec4899'];
 
-export function DashboardTab() {
+export function DashboardCamisas() {
   const { products, sales, settings } = useLouveStore();
   const [mounted, setMounted] = useState(false);
   const salesChartRef = useRef<HTMLDivElement>(null);
@@ -65,13 +65,26 @@ export function DashboardTab() {
         const canvas = await html2canvas(sizesChartRef.current, { backgroundColor: '#ffffff', scale: 2 });
         chartImgSizes = canvas.toDataURL('image/png');
       }
-    } catch {}
-    exportDashboardPDF(settings, [
-      { label: 'Faturamento Total', value: 'R$ ' + totalGross.toFixed(2), sub: sales.length + ' vendas realizadas' },
-      { label: 'Lucro Liquido', value: 'R$ ' + netProfit.toFixed(2), sub: 'Margem: ' + margin + '%' },
-      { label: 'Pecas em Estoque', value: totalPieces + ' un', sub: products.length + ' modelos cadastrados' },
-      { label: 'Patrimonio em Estoque', value: 'R$ ' + totalStockValuation.toFixed(2), sub: 'Custo acumulado' },
-    ], chartImgSales, chartImgSizes, sales);
+    } catch (err) {
+      console.error('Erro ao capturar graficos:', err);
+    }
+    try {
+      await exportDashboardPDF(
+        settings,
+        [
+          { label: 'Faturamento Total', value: 'R$ ' + totalGross.toFixed(2), sub: sales.length + ' vendas realizadas', color: '#fffbeb' },
+          { label: 'Lucro Liquido', value: 'R$ ' + netProfit.toFixed(2), sub: 'Margem: ' + margin + '%', color: '#ecfdf5' },
+          { label: 'Pecas em Estoque', value: totalPieces + ' un', sub: products.length + ' modelos cadastrados', color: '#eff6ff' },
+          { label: 'Patrimonio em Estoque', value: 'R$ ' + totalStockValuation.toFixed(2), sub: 'Custo acumulado', color: '#fdf2f8' },
+        ],
+        chartImgSales,
+        chartImgSizes,
+        sales,
+        'Dashboard Camisas - Relatorio'
+      );
+    } catch (err) {
+      console.error('Erro ao exportar PDF:', err);
+    }
   };
 
   if (!mounted) {
@@ -91,7 +104,10 @@ export function DashboardTab() {
   return (
     <section className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-        <div />
+        <div>
+          <h2 className="text-lg font-bold text-slate-800">Dashboard Camisas</h2>
+          <p className="text-xs text-slate-500">Dados exclusivos de camisas</p>
+        </div>
         <Button variant="secondary" size="sm" onClick={handleExportPDF} className="gap-2 text-xs">
           <Download className="w-4 h-4" /> Exportar Dashboard PDF
         </Button>
@@ -142,9 +158,9 @@ export function DashboardTab() {
 
       {sales.length > 0 && (
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-          <h3 className="text-sm font-bold text-slate-800 mb-4">Ultimas Vendas</h3>
-          <div className="max-h-64 overflow-y-auto space-y-2">
-            {sales.slice(0, 5).map((s) => (
+          <h3 className="text-sm font-bold text-slate-800 mb-4">Ultimas Vendas - Camisas</h3>
+          <div className="max-h-96 overflow-y-auto space-y-2">
+            {sales.slice(0, 8).map((s) => (
               <div key={s.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
                 <div>
                   <span className="font-bold text-slate-800 text-sm font-mono">{s.id}</span>
