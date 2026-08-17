@@ -12,11 +12,12 @@ import {
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { exportStockPDF } from '@/lib/export-pdf';
 
 type SizeKey = 'P' | 'M' | 'G' | 'GG';
 
 export function StockTab() {
-  const { products, adjustStock } = useLouveStore();
+  const { products, adjustStock, settings } = useLouveStore();
   const [filter, setFilter] = useState<'all' | 'low'>('all');
   const [adjustModal, setAdjustModal] = useState<{ open: boolean; productId: string | null; size: SizeKey | null }>({
     open: false,
@@ -43,26 +44,7 @@ export function StockTab() {
   };
 
   const handleExportPDF = () => {
-    import('jspdf').then(({ jsPDF }) => {
-      const { settings } = useLouveStore.getState();
-      const doc = new jsPDF();
-      doc.setFontSize(16);
-      doc.text(`${settings.brandName} - Relatorio de Inventario e Estoque`, 14, 20);
-      doc.setFontSize(10);
-      doc.text(`Gerado em: ${new Date().toLocaleDateString('pt-BR')}`, 14, 26);
-      let y = 36;
-      products.forEach((p) => {
-        if (y > 270) {
-          doc.addPage();
-          y = 20;
-        }
-        const total = p.sizes.P + p.sizes.M + p.sizes.G + p.sizes.GG;
-        doc.text(`${p.code} - ${p.name} | Total: ${total} un (Minimo: ${p.minStock})`, 14, y);
-        doc.text(`Distribuicao: P:${p.sizes.P} | M:${p.sizes.M} | G:${p.sizes.G} | GG:${p.sizes.GG}`, 14, y + 5);
-        y += 12;
-      });
-      doc.save(`Inventario_Estoque_${settings.brandName.replace(/\s+/g, '_')}.pdf`);
-    });
+    exportStockPDF(settings, products);
   };
 
   return (

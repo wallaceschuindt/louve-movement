@@ -15,8 +15,10 @@ interface LouveState {
   productModalOpen: boolean;
   romaneioModalOpen: boolean;
   editingProductId: string | null;
+  password: string;
 
-  login: () => void;
+  login: (email: string, pass: string) => boolean;
+  changePassword: (oldPass: string, newPass: string) => boolean;
   logout: () => void;
   setActiveTab: (tab: TabId) => void;
   setSettings: (settings: Partial<AppSettings>) => void;
@@ -25,6 +27,7 @@ interface LouveState {
   deleteProduct: (id: string) => void;
   addToCart: (item: CartItem) => void;
   removeFromCart: (index: number) => void;
+  updateCartItemQty: (index: number, qty: number) => void;
   clearCart: () => void;
   finalizeSale: (sale: SaleRecord) => void;
   openProductModal: (productId?: string) => void;
@@ -48,7 +51,7 @@ const seedProducts: Product[] = [
     id: 'prod_1',
     code: 'LM-ST-01',
     name: 'Camisa Oversized Lion of Judah',
-    print: 'Leão de Judá Floral Costas',
+    print: 'Leao de Juda Floral Costas',
     color: 'Preto Mineral',
     cost: 38.0,
     price: 99.9,
@@ -60,7 +63,7 @@ const seedProducts: Product[] = [
     id: 'prod_2',
     code: 'LM-ST-02',
     name: 'Camisa Minimalist Grace',
-    print: 'Graça Sobre Graça Peito',
+    print: 'Graca Sobre Graca Peito',
     color: 'Off-White / Bege',
     cost: 34.0,
     price: 89.9,
@@ -80,14 +83,16 @@ function loadFromStorage() {
   }
 }
 
-function saveToStorage(state: { settings: AppSettings; products: Product[]; sales: SaleRecord[] }) {
+function saveToStorage(state: { settings: AppSettings; products: Product[]; sales: SaleRecord[]; password?: string }) {
   if (typeof window === 'undefined') return;
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+    const toSave: Record<string, unknown> = {
       settings: state.settings,
       products: state.products,
       sales: state.sales,
-    }));
+    };
+    if (state.password) toSave.password = state.password;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
   } catch {
     // storage full
   }
@@ -105,9 +110,9 @@ export const useLouveStore = create<LouveState>((set, get) => {
     productModalOpen: false,
     romaneioModalOpen: false,
     editingProductId: null as string | null,
+    password: (saved as Record<string, unknown>)?.password as string || '123456',
   };
 
-  // Save seed data on first load
   if (!saved) {
     saveToStorage(initialState);
   }
@@ -115,7 +120,23 @@ export const useLouveStore = create<LouveState>((set, get) => {
   return {
     ...initialState,
 
-    login: () => set({ isLoggedIn: true }),
+    login: (email, pass) => {
+      const s = get();
+      if (email === 'islainefloth@hotmail.com' && pass === s.password) {
+        set({ isLoggedIn: true });
+        return true;
+      }
+      return false;
+    },
+
+    changePassword: (oldPass, newPass) => {
+      const s = get();
+      if (oldPass !== s.password) return false;
+      set({ password: newPass });
+      saveToStorage({ ...s, password: newPass });
+      return true;
+    },
+
     logout: () => set({ isLoggedIn: false }),
     setActiveTab: (tab) => set({ activeTab: tab }),
 
@@ -148,10 +169,28 @@ export const useLouveStore = create<LouveState>((set, get) => {
       }),
 
     addToCart: (item) =>
-      set((s) => ({ currentCart: [...s.currentCart, item] })),
+      set((s) => {
+        const existing = s.currentCart.findIndex(
+          (c) => c.productId === item.productId && c.size === item.size
+        );
+        if (existing >= 0) {
+          const updated = [...s.currentCart];
+          updated[existing] = { ...updated[existing], qty: updated[existing].qty + item.qty };
+          return { currentCart: updated };
+        }
+        return { currentCart: [...s.currentCart, item] };
+      }),
 
     removeFromCart: (index) =>
       set((s) => ({ currentCart: s.currentCart.filter((_, i) => i !== index) })),
+
+    updateCartItemQty: (index, qty) =>
+      set((s) => {
+        if (qty <= 0) return { currentCart: s.currentCart.filter((_, i) => i !== index) };
+        const updated = [...s.currentCart];
+        updated[index] = { ...updated[index], qty };
+        return { currentCart: updated };
+      }),
 
     clearCart: () => set({ currentCart: [] }),
 
@@ -160,8 +199,8 @@ export const useLouveStore = create<LouveState>((set, get) => {
         const products = s.products.map((p) => {
           const updatedSizes = { ...p.sizes };
           sale.items.forEach((item) => {
-            if (item.productId === p.id && updatedSizes[item.size] > 0) {
-              updatedSizes[item.size] -= 1;
+            if (item.productId === p.id) {
+              updatedSizes[item.size] = Math.max(0, updatedSizes[item.size] - item.qty);
             }
           });
           return { ...p, sizes: updatedSizes };
@@ -208,7 +247,7 @@ export const useLouveStore = create<LouveState>((set, get) => {
           return updated;
         });
       } catch {
-        alert('Erro ao importar dados. Arquivo inválido.');
+        alert('Erro ao importar dados. Arquivo invalido.');
       }
     },
   };

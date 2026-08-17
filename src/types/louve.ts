@@ -18,6 +18,7 @@ export interface CartItem {
   print: string;
   color: string;
   size: 'P' | 'M' | 'G' | 'GG';
+  qty: number;
   price: number;
   cost: number;
   image: string;

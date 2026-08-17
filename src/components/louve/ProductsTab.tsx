@@ -2,8 +2,9 @@
 
 import { useState } from 'react';
 import { useLouveStore } from '@/store/louve-store';
-import { Plus, FileText, Edit3, Trash2, Search, X, Upload } from 'lucide-react';
+import { Plus, FileText, Edit3, Trash2, Search, Upload, Download } from 'lucide-react';
 import type { Product } from '@/types/louve';
+import { exportProductsPDF } from '@/lib/export-pdf';
 import {
   Dialog,
   DialogContent,
@@ -15,7 +16,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
 export function ProductsTab() {
-  const { products, openProductModal, deleteProduct } = useLouveStore();
+  const { products, openProductModal, deleteProduct, settings } = useLouveStore();
   const [search, setSearch] = useState('');
 
   const filtered = products.filter(
@@ -27,34 +28,7 @@ export function ProductsTab() {
   );
 
   const handleExportPDF = () => {
-    import('jspdf').then(({ jsPDF }) => {
-      const { settings } = useLouveStore.getState();
-      const doc = new jsPDF();
-      doc.setFontSize(16);
-      doc.text(`${settings.brandName} - Catalogo de Produtos`, 14, 20);
-      doc.setFontSize(10);
-      doc.text(`Gerado em: ${new Date().toLocaleDateString('pt-BR')}`, 14, 26);
-      let y = 36;
-      products.forEach((p, i) => {
-        if (y > 270) {
-          doc.addPage();
-          y = 20;
-        }
-        const total = p.sizes.P + p.sizes.M + p.sizes.G + p.sizes.GG;
-        doc.text(
-          `${i + 1}. [${p.code}] ${p.name} - ${p.print} (${p.color})`,
-          14,
-          y
-        );
-        doc.text(
-          `Preco: R$ ${p.price.toFixed(2)} | Custo: R$ ${p.cost.toFixed(2)} | Grade: P:${p.sizes.P} M:${p.sizes.M} G:${p.sizes.G} GG:${p.sizes.GG} (Total: ${total})`,
-          14,
-          y + 6
-        );
-        y += 14;
-      });
-      doc.save(`Catalogo_Produtos_${settings.brandName.replace(/\s+/g, '_')}.pdf`);
-    });
+    exportProductsPDF(settings, products);
   };
 
   return (
@@ -117,7 +91,11 @@ export function ProductsTab() {
                     <tr key={p.id} className="hover:bg-slate-50 transition border-b border-slate-100">
                       <td className="p-3.5">
                         <div className="flex items-center gap-3">
-                          <img src={p.image} className="w-10 h-10 object-cover rounded-xl border border-slate-200" alt={p.name} />
+                          {p.image ? (
+                            <img src={p.image} className="w-10 h-10 object-cover rounded-xl border border-slate-200" alt={p.name} />
+                          ) : (
+                            <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400 text-[10px]">SEM FOTO</div>
+                          )}
                           <div>
                             <div className="font-bold text-slate-800">{p.name}</div>
                             <div className="text-[11px] text-slate-400">{p.code} &bull; {p.print}</div>
@@ -224,7 +202,7 @@ function ProductModal() {
         M: '0',
         G: '0',
         GG: '0',
-        image: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=300&auto=format&fit=crop&q=60',
+        image: '',
       });
     }
   };
@@ -274,8 +252,17 @@ function ProductModal() {
     reader.readAsDataURL(file);
   };
 
+  // Reset form when dialog opens
+  const handleOpenChange = (open: boolean) => {
+    if (open) {
+      populateForm();
+    } else {
+      closeProductModal();
+    }
+  };
+
   return (
-    <Dialog open={productModalOpen} onOpenChange={(open) => { if (!open) closeProductModal(); else populateForm(); }}>
+    <Dialog open={productModalOpen} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl">
         <DialogHeader>
           <DialogTitle className="text-base font-bold text-slate-800">
@@ -286,7 +273,8 @@ function ProductModal() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {/* Image Upload */}
             <div className="sm:col-span-1 flex flex-col items-center justify-center border-2 border-dashed border-slate-200 rounded-2xl p-4 bg-slate-50 text-center">
-              <img src={form.image} alt="Preview" className="w-24 h-24 object-cover rounded-xl mb-2 shadow-sm" />
+              <img src={form.image || ''} alt="Preview" className={`${form.image ? 'w-24 h-24' : 'w-24 h-24 bg-slate-100'} object-cover rounded-xl mb-2 shadow-sm`} />
+              {form.image && (
               <label className="cursor-pointer text-[11px] font-bold text-amber-600 hover:underline">
                 <Upload className="w-3 h-3 inline mr-1" />
                 Carregar Foto

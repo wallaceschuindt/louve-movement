@@ -21,7 +21,6 @@ import {
   LogOut,
   PlusCircle,
   AlertTriangle,
-  Crown,
   Menu,
   X,
 } from 'lucide-react';
@@ -78,11 +77,7 @@ export default function HomePage() {
           {/* Logo */}
           <div className="p-5 flex items-center gap-3 border-b border-slate-800">
             <div className="w-10 h-10 rounded-xl bg-amber-500 flex items-center justify-center overflow-hidden shrink-0 shadow-md shadow-amber-500/20">
-              {settings.brandLogo ? (
-                <img src={settings.brandLogo} alt="Logo" className="w-full h-full object-cover" />
-              ) : (
-                <Crown className="w-6 h-6 text-slate-950" />
-              )}
+              <img src={settings.brandLogo || '/logo.jpeg'} alt="Logo" className="w-full h-full object-cover" />
             </div>
             <div className="overflow-hidden">
               <h2 className="font-bold text-sm leading-tight truncate text-white">{settings.brandName}</h2>
@@ -135,11 +130,7 @@ export default function HomePage() {
             <div className="p-5 flex items-center justify-between border-b border-slate-800">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-amber-500 flex items-center justify-center overflow-hidden shrink-0">
-                  {settings.brandLogo ? (
-                    <img src={settings.brandLogo} alt="Logo" className="w-full h-full object-cover" />
-                  ) : (
-                    <Crown className="w-6 h-6 text-slate-950" />
-                  )}
+                  <img src={settings.brandLogo || '/logo.jpeg'} alt="Logo" className="w-full h-full object-cover" />
                 </div>
                 <span className="font-bold text-sm truncate">{settings.brandName}</span>
               </div>

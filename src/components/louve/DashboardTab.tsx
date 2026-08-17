@@ -1,32 +1,25 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useLouveStore } from '@/store/louve-store';
-import { DollarSign, Wallet, Shirt, PackageSearch, BarChart3, PieChartIcon } from 'lucide-react';
+import { DollarSign, Wallet, Shirt, PackageSearch, BarChart3, PieChartIcon, Download } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-  Legend,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  PieChart, Pie, Cell, Legend,
 } from 'recharts';
+import { exportDashboardPDF } from '@/lib/export-pdf';
 
 const SIZE_COLORS = ['#38bdf8', '#818cf8', '#f59e0b', '#ec4899'];
 
 export function DashboardTab() {
-  const { products, sales } = useLouveStore();
+  const { products, sales, settings } = useLouveStore();
   const [mounted, setMounted] = useState(false);
+  const salesChartRef = useRef<HTMLDivElement>(null);
+  const sizesChartRef = useRef<HTMLDivElement>(null);
 
-  // Recharts needs client-side rendering
   const isClient = typeof window !== 'undefined';
   if (!mounted && isClient) {
-    // This will be called on first client render
     setTimeout(() => setMounted(true), 0);
   }
 
@@ -55,12 +48,29 @@ export function DashboardTab() {
   });
 
   const barData = [
-    {
-      name: 'Totais',
-      'Faturamento Bruto': totalGross,
-      'Lucro Líquido': netProfit,
-    },
+    { name: 'Totais', 'Faturamento Bruto': totalGross, 'Lucro Liquido': netProfit },
   ];
+
+  const handleExportPDF = async () => {
+    let chartImgSales = '';
+    let chartImgSizes = '';
+    try {
+      if (salesChartRef.current) {
+        const canvas = await import('html2canvas').then(({ default: h2c }) => h2c(salesChartRef.current, { backgroundColor: '#ffffff', scale: 2 }));
+        chartImgSales = canvas.toDataURL('image/png');
+      }
+      if (sizesChartRef.current) {
+        const canvas = await import('html2canvas').then(({ default: h2c }) => h2c(sizesChartRef.current, { backgroundColor: '#ffffff', scale: 2 }));
+        chartImgSizes = canvas.toDataURL('image/png');
+      }
+    } catch {}
+    exportDashboardPDF(settings, [
+      { label: 'Faturamento Total', value: `R$ ${totalGross.toFixed(2)}`, sub: `${sales.length} vendas realizadas` },
+      { label: 'Lucro Liquido', value: `R$ ${netProfit.toFixed(2)}`, sub: `Margem: ${margin}%` },
+      { label: 'Pecas em Estoque', value: `${totalPieces} un`, sub: `${products.length} modelos cadastrados` },
+      { label: 'Patrimonio em Estoque', value: `R$ ${totalStockValuation.toFixed(2)}`, sub: 'Custo acumulado' },
+    ], chartImgSales, chartImgSizes, sales);
+  };
 
   if (!mounted) {
     return (
@@ -78,45 +88,24 @@ export function DashboardTab() {
 
   return (
     <section className="space-y-6">
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <KPICard
-          icon={<DollarSign className="w-6 h-6" />}
-          iconBg="bg-amber-100 text-amber-600"
-          label="Faturamento Total"
-          value={`R$ ${totalGross.toFixed(2)}`}
-          sub={`${sales.length} vendas realizadas`}
-        />
-        <KPICard
-          icon={<Wallet className="w-6 h-6" />}
-          iconBg="bg-emerald-100 text-emerald-600"
-          label="Lucro Líquido"
-          value={`R$ ${netProfit.toFixed(2)}`}
-          valueClass="text-emerald-600"
-          sub={`Margem: ${margin}%`}
-        />
-        <KPICard
-          icon={<Shirt className="w-6 h-6" />}
-          iconBg="bg-blue-100 text-blue-600"
-          label="Peças em Estoque"
-          value={`${totalPieces} un`}
-          sub={`${products.length} modelos cadastrados`}
-        />
-        <KPICard
-          icon={<PackageSearch className="w-6 h-6" />}
-          iconBg="bg-rose-100 text-rose-600"
-          label="Patrimônio em Estoque"
-          value={`R$ ${totalStockValuation.toFixed(2)}`}
-          sub="Custo acumulado"
-        />
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+        <div />
+        <Button variant="secondary" size="sm" onClick={handleExportPDF} className="gap-2 text-xs">
+          <Download className="w-4 h-4" /> Exportar Dashboard PDF
+        </Button>
       </div>
 
-      {/* Charts */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <KPICard icon={<DollarSign className="w-6 h-6" />} iconBg="bg-amber-100 text-amber-600" label="Faturamento Total" value={`R$ ${totalGross.toFixed(2)}`} sub={`${sales.length} vendas realizadas`} />
+        <KPICard icon={<Wallet className="w-6 h-6" />} iconBg="bg-emerald-100 text-emerald-600" label="Lucro Liquido" value={`R$ ${netProfit.toFixed(2)}`} valueClass="text-emerald-600" sub={`Margem: ${margin}%`} />
+        <KPICard icon={<Shirt className="w-6 h-6" />} iconBg="bg-blue-100 text-blue-600" label="Pecas em Estoque" value={`${totalPieces} un`} sub={`${products.length} modelos cadastrados`} />
+        <KPICard icon={<PackageSearch className="w-6 h-6" />} iconBg="bg-rose-100 text-rose-600" label="Patrimonio em Estoque" value={`R$ ${totalStockValuation.toFixed(2)}`} sub="Custo acumulado" />
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm" ref={salesChartRef}>
           <h3 className="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2">
-            <BarChart3 className="w-4 h-4 text-amber-500" />
-            Faturamento vs Lucro
+            <BarChart3 className="w-4 h-4 text-amber-500" /> Faturamento vs Lucro
           </h3>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
@@ -124,61 +113,41 @@ export function DashboardTab() {
                 <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                 <XAxis dataKey="name" tick={{ fontSize: 12 }} />
                 <YAxis tick={{ fontSize: 11 }} />
-                <Tooltip
-                  formatter={(value: number) => `R$ ${value.toFixed(2)}`}
-                  contentStyle={{ borderRadius: 12, border: '1px solid #e2e8f0', fontSize: 12 }}
-                />
+                <Tooltip formatter={(value: number) => `R$ ${value.toFixed(2)}`} contentStyle={{ borderRadius: 12, border: '1px solid #e2e8f0', fontSize: 12 }} />
                 <Bar dataKey="Faturamento Bruto" fill="#d97706" radius={[6, 6, 0, 0]} />
-                <Bar dataKey="Lucro Líquido" fill="#10b981" radius={[6, 6, 0, 0]} />
+                <Bar dataKey="Lucro Liquido" fill="#10b981" radius={[6, 6, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
-
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm" ref={sizesChartRef}>
           <h3 className="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2">
-            <PieChartIcon className="w-4 h-4 text-amber-500" />
-            Distribuição por Tamanhos
+            <PieChartIcon className="w-4 h-4 text-amber-500" /> Distribuicao por Tamanhos
           </h3>
           <div className="h-64 flex items-center justify-center">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
-                <Pie
-                  data={sizeData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={50}
-                  outerRadius={90}
-                  paddingAngle={4}
-                  dataKey="value"
-                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                >
-                  {sizeData.map((_, index) => (
-                    <Cell key={`cell-${index}`} fill={SIZE_COLORS[index]} />
-                  ))}
+                <Pie data={sizeData} cx="50%" cy="50%" innerRadius={50} outerRadius={90} paddingAngle={4} dataKey="value" label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}>
+                  {sizeData.map((_, index) => (<Cell key={`cell-${index}`} fill={SIZE_COLORS[index]} />))}
                 </Pie>
                 <Legend />
-                <Tooltip
-                  formatter={(value: number, name: string) => [`${value} peças`, name]}
-                  contentStyle={{ borderRadius: 12, border: '1px solid #e2e8f0', fontSize: 12 }}
-                />
+                <Tooltip formatter={(value: number, name: string) => [`${value} pecas`, name]} contentStyle={{ borderRadius: 12, border: '1px solid #e2e8f0', fontSize: 12 }} />
               </PieChart>
             </ResponsiveContainer>
           </div>
         </div>
       </div>
 
-      {/* Recent Sales */}
       {sales.length > 0 && (
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-          <h3 className="text-sm font-bold text-slate-800 mb-4">Últimas Vendas</h3>
+          <h3 className="text-sm font-bold text-slate-800 mb-4">Ultimas Vendas</h3>
           <div className="max-h-64 overflow-y-auto space-y-2">
             {sales.slice(0, 5).map((s) => (
               <div key={s.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
                 <div>
                   <span className="font-bold text-slate-800 text-sm font-mono">{s.id}</span>
                   <span className="text-slate-400 text-xs ml-2">{s.date}</span>
-                  <p className="text-xs text-slate-500 mt-0.5">{s.client.name} — {s.items.length} peça(s)</p>
+                  <p className="text-xs text-slate-500 mt-0.5">{s.client.name} — {s.items.reduce((sum, i) => sum + i.qty, 0)} peca(s)</p>
                 </div>
                 <span className="font-bold text-slate-900">R$ {s.total.toFixed(2)}</span>
               </div>
@@ -190,24 +159,10 @@ export function DashboardTab() {
   );
 }
 
-function KPICard({
-  icon,
-  iconBg,
-  label,
-  value,
-  sub,
-  valueClass = 'text-slate-900',
-}: {
-  icon: React.ReactNode;
-  iconBg: string;
-  label: string;
-  value: string;
-  sub: string;
-  valueClass?: string;
-}) {
+function KPICard({ icon, iconBg, label, value, sub, valueClass = 'text-slate-900' }: { icon: React.ReactNode; iconBg: string; label: string; value: string; sub: string; valueClass?: string }) {
   return (
     <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
-      <div className={`w-12 h-12 rounded-xl ${iconBg} flex items-center justify-center shrink-0`}>{icon}</div>
+      <div className={`w-12 h-12 rounded-xl ${iconBg} flex items-center justify-center shrink-0">{icon}</div>
       <div>
         <p className="text-xs text-slate-500 font-medium">{label}</p>
         <h3 className={`text-xl font-bold ${valueClass}`}>{value}</h3>
