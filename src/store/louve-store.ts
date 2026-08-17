@@ -1,6 +1,13 @@
 'use client';
 
 import { create } from 'zustand';
+
+import {
+  createProduct, updateProduct as updateProductAction, deleteProduct as deleteProductAction,
+  createOtherProduct, updateOtherProduct as updateOtherProductAction, deleteOtherProduct as deleteOtherProductAction
+} from '@/actions/product.actions';
+import { createSale as createSaleAction, deleteSale as deleteSaleAction, createOtherSale as createOtherSaleAction, deleteOtherSale as deleteOtherSaleAction } from '@/actions/sale.actions';
+import { updateSettings as updateSettingsAction } from '@/actions/settings.actions';
 import type { Product, SaleRecord, CartItem, OtherProduct, OtherSaleRecord, OtherCartItem, AppSettings, TabId } from '@/types/louve';
 
 const STORAGE_KEY = 'LOUVE_MOVEMENT_DATA';
@@ -61,6 +68,13 @@ interface LouveState {
   deleteOtherSale: (id: string) => void;
   exportData: () => string;
   importData: (json: string) => void;
+  hydrate: (data: {
+    products: Product[];
+    sales: SaleRecord[];
+    otherProducts: OtherProduct[];
+    otherSales: OtherSaleRecord[];
+    settings: AppSettings;
+  }) => void;
 }
 
 const defaultSettings: AppSettings = {
@@ -144,53 +158,20 @@ const seedOtherProducts: OtherProduct[] = [
   },
 ];
 
-function loadFromStorage() {
-  if (typeof window === 'undefined') return null;
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    return saved ? JSON.parse(saved) : null;
-  } catch {
-    return null;
-  }
-}
+// LocalStorage functions removed for database integration
 
-function saveToStorage(state: {
-  settings: AppSettings;
-  products: Product[];
-  sales: SaleRecord[];
-  otherProducts: OtherProduct[];
-  otherSales: OtherSaleRecord[];
-  password?: string;
-}) {
-  if (typeof window === 'undefined') return;
-  try {
-    const toSave: Record<string, unknown> = {
-      settings: state.settings,
-      products: state.products,
-      sales: state.sales,
-      otherProducts: state.otherProducts,
-      otherSales: state.otherSales,
-    };
-    if (state.password) toSave.password = state.password;
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
-  } catch {
-    // storage full
-  }
-}
+// saveToStorage removed for database integration
 
 export const useLouveStore = create<LouveState>((set, get) => {
-  const saved = loadFromStorage();
-  const migrateProducts = (prods: Product[]): Product[] =>
-    prods.map((p) => (p.category ? p : { ...p, category: 'Oversized' }));
   const initialState = {
     isLoggedIn: false,
     activeTab: 'dashboard-geral' as TabId,
-    settings: saved?.settings || defaultSettings,
-    products: migrateProducts(saved?.products || seedProducts),
-    sales: saved?.sales || [],
+    settings: defaultSettings,
+    products: [],
+    sales: [],
     currentCart: [] as CartItem[],
-    otherProducts: saved?.otherProducts || seedOtherProducts,
-    otherSales: saved?.otherSales || [],
+    otherProducts: [],
+    otherSales: [],
     otherCart: [] as OtherCartItem[],
     productModalOpen: false,
     otherProductModalOpen: false,
@@ -199,15 +180,20 @@ export const useLouveStore = create<LouveState>((set, get) => {
     editingProductId: null as string | null,
     editingOtherProductId: null as string | null,
     editingSaleId: null as string | null,
-    password: (saved as Record<string, unknown>)?.password as string || '123456',
+    password: '123456',
   };
-
-  if (!saved) {
-    saveToStorage(initialState);
-  }
 
   return {
     ...initialState,
+    
+    hydrate: (data) => set({
+      products: data.products,
+      sales: data.sales,
+      otherProducts: data.otherProducts,
+      otherSales: data.otherSales,
+      settings: data.settings,
+    }),
+
 
     login: (email, pass) => {
       const s = get();
@@ -222,7 +208,7 @@ export const useLouveStore = create<LouveState>((set, get) => {
       const s = get();
       if (oldPass !== s.password) return false;
       set({ password: newPass });
-      saveToStorage({ ...s, password: newPass });
+      
       return true;
     },
 
@@ -232,28 +218,28 @@ export const useLouveStore = create<LouveState>((set, get) => {
     setSettings: (newSettings) =>
       set((s) => {
         const updated = { settings: { ...s.settings, ...newSettings } };
-        saveToStorage({ ...s, ...updated });
+        updateSettingsAction(newSettings).catch(console.error);
         return updated;
       }),
 
     addProduct: (product) =>
       set((s) => {
         const products = [...s.products, product];
-        saveToStorage({ ...s, products });
+        
         return { products };
       }),
 
     updateProduct: (product) =>
       set((s) => {
         const products = s.products.map((p) => (p.id === product.id ? product : p));
-        saveToStorage({ ...s, products });
+        
         return { products };
       }),
 
     deleteProduct: (id) =>
       set((s) => {
         const products = s.products.filter((p) => p.id !== id);
-        saveToStorage({ ...s, products });
+        
         return { products };
       }),
 
@@ -283,7 +269,7 @@ export const useLouveStore = create<LouveState>((set, get) => {
 
     clearCart: () => set({ currentCart: [] }),
 
-    finalizeSale: (sale) =>
+    finalizeSale: (sale) => {
       set((s) => {
         const products = s.products.map((p) => {
           const updatedSizes = { ...p.sizes };
@@ -295,9 +281,10 @@ export const useLouveStore = create<LouveState>((set, get) => {
           return { ...p, sizes: updatedSizes };
         });
         const sales = [sale, ...s.sales];
-        saveToStorage({ ...s, products, sales });
         return { sales, products, currentCart: [] };
-      }),
+      });
+      createSaleAction(sale).catch(console.error);
+    },
 
     openProductModal: (productId) =>
       set({ productModalOpen: true, editingProductId: productId || null }),
@@ -314,28 +301,28 @@ export const useLouveStore = create<LouveState>((set, get) => {
           }
           return p;
         });
-        saveToStorage({ ...s, products });
+        
         return { products };
       }),
 
     addOtherProduct: (product) =>
       set((s) => {
         const otherProducts = [...s.otherProducts, product];
-        saveToStorage({ ...s, otherProducts });
+        
         return { otherProducts };
       }),
 
     updateOtherProduct: (product) =>
       set((s) => {
         const otherProducts = s.otherProducts.map((p) => (p.id === product.id ? product : p));
-        saveToStorage({ ...s, otherProducts });
+        
         return { otherProducts };
       }),
 
     deleteOtherProduct: (id) =>
       set((s) => {
         const otherProducts = s.otherProducts.filter((p) => p.id !== id);
-        saveToStorage({ ...s, otherProducts });
+        
         return { otherProducts };
       }),
 
@@ -347,7 +334,7 @@ export const useLouveStore = create<LouveState>((set, get) => {
           }
           return p;
         });
-        saveToStorage({ ...s, otherProducts });
+        
         return { otherProducts };
       }),
 
@@ -380,7 +367,7 @@ export const useLouveStore = create<LouveState>((set, get) => {
 
     clearOtherCart: () => set({ otherCart: [] }),
 
-    finalizeOtherSale: (sale) =>
+    finalizeOtherSale: (sale) => {
       set((s) => {
         const otherProducts = s.otherProducts.map((p) => {
           const soldItem = sale.items.find((i) => i.productId === p.id);
@@ -390,9 +377,10 @@ export const useLouveStore = create<LouveState>((set, get) => {
           return p;
         });
         const otherSales = [sale, ...s.otherSales];
-        saveToStorage({ ...s, otherProducts, otherSales });
         return { otherSales, otherProducts, otherCart: [] };
-      }),
+      });
+      createOtherSaleAction(sale).catch(console.error);
+    },
 
     openOtherRomaneioModal: () => set({ otherRomaneioModalOpen: true, otherCart: [] }),
     closeOtherRomaneioModal: () => set({ otherRomaneioModalOpen: false, otherCart: [] }),
@@ -400,7 +388,7 @@ export const useLouveStore = create<LouveState>((set, get) => {
     deleteSale: (id) =>
       set((s) => {
         const sales = s.sales.filter((sale) => sale.id !== id);
-        saveToStorage({ ...s, sales });
+        
         return { sales };
       }),
 
@@ -431,7 +419,7 @@ export const useLouveStore = create<LouveState>((set, get) => {
           return { ...p, sizes: updatedSizes };
         });
         const sales = s.sales.map((sale) => (sale.id === updatedSale.id ? updatedSale : sale));
-        saveToStorage({ ...s, products, sales });
+        
         return { sales, products, editingSaleId: null, currentCart: [] };
       }),
 
@@ -446,7 +434,7 @@ export const useLouveStore = create<LouveState>((set, get) => {
     deleteOtherSale: (id) =>
       set((s) => {
         const otherSales = s.otherSales.filter((sale) => sale.id !== id);
-        saveToStorage({ ...s, otherSales });
+        
         return { otherSales };
       }),
 
@@ -472,7 +460,7 @@ export const useLouveStore = create<LouveState>((set, get) => {
             otherProducts: data.otherProducts || s.otherProducts,
             otherSales: data.otherSales || s.otherSales,
           };
-          saveToStorage({ ...s, ...updated });
+          
           return updated;
         });
       } catch {
